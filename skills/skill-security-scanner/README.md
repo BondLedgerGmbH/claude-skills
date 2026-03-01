@@ -12,7 +12,8 @@ Scans AI skill packages (Claude Code, Cursor, Copilot, Gemini CLI, etc.) for sec
 
 ## Prerequisites
 
-- [Node.js](https://nodejs.org/) (for `npx skscan`)
+- [Node.js](https://nodejs.org/) (for skscan)
+- [pnpm](https://pnpm.io/) (needed to build skscan from source — the npm package has a known packaging bug)
 - macOS or Linux (the unicode check script uses `perl` as fallback on macOS)
 
 ## Usage
@@ -34,6 +35,7 @@ Security audit this skill package: https://github.com/someone/their-skill
 | `SKILL.md` | Main skill — audit methodology, skscan integration, report format |
 | `references/security-checklist.md` | Detailed patterns across 12 threat categories |
 | `scripts/unicode_check.sh` | Automated detection (12 checks, macOS-compatible) |
+| `scripts/run_skscan.sh` | skscan wrapper — handles npm packaging bug via source build fallback |
 | `docs/IMPLEMENTATION_GUIDE.md` | Full rebuild guide with design decisions and rationale |
 
 ## Hardening

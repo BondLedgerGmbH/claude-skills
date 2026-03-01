@@ -30,8 +30,9 @@ security risks, vulnerabilities, and backdoors before they are trusted to run.
 
 ### Two-phase scanning approach
 
-1. **Automated scan** using [skscan](https://skvault.dev/) (`npx skscan@latest`) —
-   an open-source scanner that checks 29 rules across 5 threat categories
+1. **Automated scan** using [skscan](https://skvault.dev/) via the bundled
+   `run_skscan.sh` wrapper — an open-source scanner that checks 29 rules across
+   5 threat categories
 2. **Manual LLM deep-dive** across 10 security domains with both regex-based and
    semantic (intent-based) analysis
 
@@ -50,8 +51,25 @@ AI skills for security.
 
 - **Claude Code CLI** installed and configured
 - **Node.js / npx** available (for skscan)
+- **pnpm** available (needed to build skscan from source — see note below)
 - **Perl** available (ships with macOS and most Linux — used as PCRE fallback)
 - **macOS or Linux** (script tested on both; macOS requires perl fallback for grep)
+
+### skscan npm packaging bug (critical)
+
+As of skscan 0.1.1, the npm package is **broken**. It declares a `workspace:*`
+dependency on `@skvault/scanner`, which is an internal pnpm workspace package that
+was never published to npm. Both `npx skscan@latest` and `pnpm dlx skscan@latest`
+fail with `EUNSUPPORTEDPROTOCOL` / `ERR_PNPM_WORKSPACE_PKG_NOT_FOUND`.
+
+**Root cause**: The skscan authors published from a pnpm monorepo
+(github.com/Khaledgarbaya/skillvault) without resolving `workspace:*` references
+in the CLI's `package.json` before `npm publish`.
+
+**Workaround**: The bundled `scripts/run_skscan.sh` wrapper tries `npx` first
+(in case the bug is fixed upstream), then falls back to cloning the monorepo,
+building `@skvault/scanner` and `skscan` with pnpm, and caching the result under
+`~/.cache/skscan/` for 7 days.
 
 ### Platform-critical note: macOS grep
 
@@ -69,11 +87,12 @@ platform and switches to perl automatically.
 
 ```
 ~/.claude/skills/skill-security-scanner/
-├── SKILL.md                           # Main skill (389 lines)
+├── SKILL.md                           # Main skill (audit methodology & report format)
 ├── references/
-│   └── security-checklist.md          # Detailed patterns & procedures (640 lines)
+│   └── security-checklist.md          # Detailed patterns & procedures
 └── scripts/
-    └── unicode_check.sh               # Automated detection script (257 lines)
+    ├── unicode_check.sh               # Automated Unicode/encoding detection (12 checks)
+    └── run_skscan.sh                  # skscan wrapper (npx -> source build fallback)
 ```
 
 ### Design principles

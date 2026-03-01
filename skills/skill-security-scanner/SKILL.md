@@ -91,20 +91,28 @@ Resolve the target to an absolute path.
 
 ## 2. Automated scan with skscan (SKVault)
 
-Run the open-source scanner from https://skvault.dev/ first to get a baseline:
+Run the open-source scanner from https://skvault.dev/ first to get a baseline.
+
+**Known issue (as of skscan 0.1.1):** The npm package is broken — it declares a
+`workspace:*` dependency on `@skvault/scanner` which was never published to npm.
+Both `npx` and `pnpm dlx` fail. Use the bundled wrapper script which tries `npx`
+first, then falls back to cloning and building from the GitHub source:
 
 ```
-npx skscan@latest "$TARGET_PATH"
+bash ~/.claude/skills/skill-security-scanner/scripts/run_skscan.sh "$TARGET_PATH"
 ```
+
+The wrapper caches the built skscan under `~/.cache/skscan/` for 7 days to avoid
+rebuilding on every scan. Requires `pnpm` for the source build fallback.
 
 Capture and present the full output. skscan checks 29 rules across 5 threat categories:
 prompt injection, hardcoded secrets, dangerous code patterns, data exfiltration, and
 hidden Unicode characters.
 
-**skscan integrity note:** skscan is fetched from npm on each run. If the scan produces
-suspiciously clean results for a complex skill, or if skscan itself errors out, treat
-this as a potential evasion and rely more heavily on the manual audit. A malicious skill
-could also be crafted to crash skscan's parser — a crash is itself a finding (MEDIUM).
+**skscan integrity note:** If the scan produces suspiciously clean results for a
+complex skill, or if skscan itself errors out, treat this as a potential evasion and
+rely more heavily on the manual audit. A malicious skill could also be crafted to
+crash skscan's parser — a crash is itself a finding (MEDIUM).
 
 If skscan is unavailable or fails, proceed with the manual audit below and note the
 failure as a finding.
