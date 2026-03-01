@@ -13,6 +13,8 @@ When you ask Claude Code to perform a task that matches a skill's trigger, it lo
 | Skill | Description |
 |-------|-------------|
 | [skill-security-scanner](skills/skill-security-scanner/) | Scans AI skill packages for security risks, vulnerabilities, backdoors, and prompt injection. Acts as a Senior Security Engineer. |
+| [yt-transcript](skills/yt-transcript/) | Extracts YouTube video transcripts and produces structured summaries with key takeaways. Handles non-English videos via auto-translation. Outputs markdown + PDF. |
+| [ib-analyseportfolio](skills/ib-analyseportfolio/) | Analyses an Interactive Brokers portfolio against a thesis, YouTube video, market scan, or comparison of two views. Runs a 3-subagent pipeline (market research, impact analysis, recommendations). |
 
 ## Installation
 
@@ -38,6 +40,36 @@ git clone https://github.com/xjarko123/claude-skills.git /tmp/claude-skills
 cp -r /tmp/claude-skills/skills/* ~/.claude/skills/
 rm -rf /tmp/claude-skills
 ```
+
+### Install ib-analyseportfolio (additional steps)
+
+The IB portfolio analysis skill uses three subagents that need to be placed in `~/.claude/agents/`:
+
+```bash
+git clone https://github.com/xjarko123/claude-skills.git /tmp/claude-skills
+
+# Copy the skill
+cp -r /tmp/claude-skills/skills/ib-analyseportfolio ~/.claude/skills/
+
+# Copy the subagents
+mkdir -p ~/.claude/agents
+cp /tmp/claude-skills/skills/ib-analyseportfolio/agents/*.md ~/.claude/agents/
+
+# Clean up
+rm -rf /tmp/claude-skills
+```
+
+Then configure your investor profile:
+
+1. Open `~/.claude/skills/ib-analyseportfolio/references/investor-context.md`
+2. Replace all `[PLACEHOLDER]` values with your actual data (age, location, accounts, holdings, theses)
+3. Save the file
+
+The skill will not produce accurate results without a properly configured `investor-context.md`. See the file itself for detailed comments on each section.
+
+**Requirements:**
+- [ib-connect](https://github.com/xjarko123/ib-connect) MCP server configured with your IB accounts
+- `yt-transcript` skill installed (for YouTube mode)
 
 ### Verify installation
 
