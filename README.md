@@ -59,13 +59,13 @@ cp /tmp/claude-skills/skills/ib-analyseportfolio/agents/*.md ~/.claude/agents/
 rm -rf /tmp/claude-skills
 ```
 
-Then configure your investor profile:
+Then configure the skill:
 
-1. Open `~/.claude/skills/ib-analyseportfolio/references/investor-context.md`
-2. Replace all `[PLACEHOLDER]` values with your actual data (age, location, accounts, holdings, theses)
-3. Save the file
+1. **Set paths:** Open `~/.claude/skills/ib-analyseportfolio/SKILL.md` and replace all `<YOUR_PROJECT_DIR>` with the absolute path to your Claude Code project directory (e.g., `/home/user/projects/my-project`)
+2. **Set investor profile:** Open `~/.claude/skills/ib-analyseportfolio/references/investor-context.md` and replace all `[PLACEHOLDER]` values with your actual data (age, location, accounts, holdings, theses)
+3. **Configure account names:** The skill references IB accounts by their names in the ib-connect MCP server config. Make sure the account names in `investor-context.md` match those in your `ib-connect` configuration.
 
-The skill will not produce accurate results without a properly configured `investor-context.md`. See the file itself for detailed comments on each section.
+The skill will not work without valid paths and will not produce accurate results without a properly configured `investor-context.md`. See the file itself for detailed comments on each section.
 
 **Requirements:**
 - [ib-connect](https://github.com/xjarko123/ib-connect) MCP server configured with your IB accounts

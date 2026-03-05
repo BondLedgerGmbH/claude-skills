@@ -34,11 +34,15 @@ INTERMEDIATE_FILE_MAX_AGE_DAYS = 7
 RESEARCH_CACHE_MAX_AGE_HOURS = 24
 MAX_ESCALATION_RETRIES = 1
 DATA_QUALITY_UNAVAILABLE_THRESHOLD_PCT = 20
-PROJECT_DIR = /Users/karolj/Desktop/Claude
-OUTPUT_DIR = /Users/karolj/Desktop/Claude/output/ib-analysis
-SKILL_DIR = /Users/karolj/Desktop/Claude/.claude/skills/ib-analyseportfolio
-AGENTS_DIR = /Users/karolj/Desktop/Claude/.claude/agents
+PROJECT_DIR = <YOUR_PROJECT_DIR>
+OUTPUT_DIR = <YOUR_PROJECT_DIR>/output/ib-analysis
+SKILL_DIR = <YOUR_PROJECT_DIR>/.claude/skills/ib-analyseportfolio
+AGENTS_DIR = <YOUR_PROJECT_DIR>/.claude/agents
 ```
+
+> **Setup required:** Replace `<YOUR_PROJECT_DIR>` with your actual project
+> directory (e.g., `/home/user/projects/my-project`). This is the root
+> directory where Claude Code runs. The skill will not work without valid paths.
 
 ## Output Directory Structure
 

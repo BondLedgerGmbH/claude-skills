@@ -125,7 +125,8 @@ For each recommendation:
 - Action: [TRIM], [EXIT], [ADD], [REBALANCE], [HEDGE]
 - Strategic intent: [RISK MITIGATION], [GROWTH OPTIMIZATION], [USD HEDGE]
 - Instrument: specific ticker, exchange, currency
-- Target account: specify bondledger or personal (or both)
+- Target account: specify account1 or account2 (or both), using the
+  account names from investor-context.md and ib-connect MCP configuration
 - Position size: per Position Sizing Methodology (conviction, base %,
   volatility modifier, resulting size)
 - Rationale: why this action, referencing the thesis/event or opportunity
@@ -133,7 +134,7 @@ For each recommendation:
   freed capital goes. Must be specific. Never leave proceeds unaddressed.
 - Tax note:
   - Personal: no capital gains tax; flag dividend withholding if relevant
-  - GmbH: corporate tax impact; participation exemption eligibility
+  - Corporate account: corporate tax impact; participation exemption eligibility
 - Tradeoff: what you give up by taking this action
 - Priority: High / Medium / Low
 

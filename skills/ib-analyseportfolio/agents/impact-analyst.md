@@ -78,7 +78,7 @@ the current portfolio:
 
 1. **Direct overlap**: Does this opportunity share a ticker with an
    existing holding? (e.g., recommending to add AMZN when AMZN is
-   already held in BondLedger)
+   already held in the corporate account)
 2. **Sector/theme overlap**: Does this opportunity fall in the same
    sector or thesis cluster as existing holdings? Would it increase
    concentration in an already-heavy sector?
