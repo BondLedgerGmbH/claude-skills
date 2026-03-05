@@ -211,24 +211,54 @@ Reference specific positions.
 
 ### Recommendations
 
-Present as a structured list, then summarize in the Action Summary Table:
-
-| # | Action | Ticker/Asset | Account | Size (% NAV) | Source | Strategic Intent | Tax Note | Priority |
-|---|--------|--------------|---------|--------------|--------|------------------|----------|----------|
+Present each recommendation as a structured block with: source tag,
+action, specific instrument (ticker, exchange), target account, position
+size (conviction level, calculation, resulting %), rationale, proceeds
+deployment (for TRIM/EXIT/REBALANCE), tax note, tradeoff, and priority.
 
 Where Source is: `[IMPACT-DRIVEN]` or `[OPPORTUNITY-SCORER]`
 
-For comparison mode, add a Condition column:
+For comparison mode, each recommendation also includes a Condition:
+"Both scenarios", "If Source A", or "If Source B"
 
-| # | Action | Ticker/Asset | Account | Size (% NAV) | Source | Condition | Strategic Intent | Tax Note | Priority |
-|---|--------|--------------|---------|--------------|--------|-----------|------------------|----------|----------|
+After all individual recommendation blocks, present a unified
+**Action Plan** that combines the summary table with deployment
+instructions for each recommendation in a single section:
 
-Where Condition is one of: "Both scenarios", "If Source A", "If Source B"
+#### Action Plan
 
-Each recommendation must include: source tag, action, specific instrument
-(ticker, exchange), target account, position size (conviction level,
-calculation, resulting %), rationale, proceeds deployment (for
-TRIM/EXIT/REBALANCE), tax note, tradeoff, and priority.
+**Action Summary Table:**
+
+| # | Action | Ticker/Asset | Account | Size (% NAV) | Amount | Deployment | Source | Priority |
+|---|--------|--------------|---------|--------------|--------|------------|--------|----------|
+
+Where Deployment is one of:
+- "Immediate" (for EXITs, TRIMs, and positions below 1% liquid NAV)
+- "Staged: N weeks" (for ADDs/REBALANCEs above 1% liquid NAV)
+
+For comparison mode, add a Condition column after Source.
+
+Below the summary table, show total new capital deployed and post-trade
+cash position.
+
+**Deployment Schedule:**
+
+For each recommendation with staged deployment (above 1% liquid NAV),
+include its tranche table directly below the summary table, grouped
+together. Format per recommendation:
+
+**Rec N: [Ticker] ($[Amount])**
+
+| Week | Action | Instrument | Tranche (%) | Amount | Entry Condition |
+|------|--------|------------|-------------|--------|-----------------|
+
+Abort conditions: [specific conditions for cancelling remaining tranches]
+
+For immediate-execution recommendations, group them in a single line:
+"Recommendations N, M, K: execute immediately at market open."
+
+This unified section replaces the old separate Action Summary Table and
+Staged Deployment Plan sections. Do NOT create separate sections for these.
 
 ### Steelman Check
 For the top 3 recommendations, present the counter-case.
@@ -299,17 +329,6 @@ multiple scenarios. Group overlapping hedges.
 
 **Minimum viable hedge:** The single most cost-efficient hedge providing
 the broadest protection. State instrument, cost, and coverage.
-
-### Staged Deployment Plan
-For each ADD/REBALANCE recommendation above 1% liquid NAV:
-- Instrument and total target allocation
-- Tranche table:
-
-| Week | Action | Instrument | Tranche (%) | Amount | Entry Condition |
-|------|--------|------------|-------------|--------|-----------------|
-
-- Abort conditions
-For smaller positions: note immediate full entry.
 
 ### Watchlist
 Specific items to monitor with trigger conditions.

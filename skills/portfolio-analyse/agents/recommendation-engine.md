@@ -386,16 +386,28 @@ If the hedge-data JSON was not provided or is empty:
 - Recommend specific instruments and strategies but note that exact
   pricing should be verified before execution
 
-### 4. Staged Deployment Plan
+### 4. Action Plan
 
-For all `[ADD]` and `[REBALANCE]` recommendations with position size
-above 1% of liquid NAV:
+Combine the action summary and deployment schedule into a single
+unified section. Do NOT create separate "Action Summary Table" and
+"Staged Deployment Plan" sections.
 
-- Deploy over 2-6 weeks in tranches (proportional to position size:
-  larger positions = more tranches)
-- Tranche schedule:
+**Action Summary Table:** One table covering all recommendations:
 
-| Week | Action | Instrument | Tranche (% of target) | Amount | Entry Condition |
+| # | Action | Ticker/Asset | Account | Size (% NAV) | Amount | Deployment | Source | Priority |
+
+Where Deployment is:
+- "Immediate" for EXITs, TRIMs, and positions below 1% liquid NAV
+- "Staged: N weeks" for ADDs/REBALANCEs above 1% liquid NAV
+
+Below the table: total new capital deployed and post-trade cash position.
+
+**Deployment Schedule:** For each staged recommendation (above 1%
+liquid NAV), include its tranche table directly below the summary:
+
+**Rec N: [Ticker] ($[Amount])**
+
+| Week | Action | Instrument | Tranche (%) | Amount | Entry Condition |
 
 - Entry conditions per tranche: price level, macro confirmation signal,
   technical support level, or time-based (deploy regardless)
@@ -403,8 +415,11 @@ above 1% of liquid NAV:
   (e.g., "regime probability shifts to >50% Contraction", "position
   drops >10% from initial entry")
 
-For smaller positions (<1% of liquid NAV): recommend immediate full entry
-unless there is a specific reason to stage.
+Deploy over 2-6 weeks in tranches (proportional to position size:
+larger positions = more tranches).
+
+For immediate-execution recommendations, group them in one line:
+"Recommendations N, M, K: execute immediately at market open."
 
 ### 5. Watchlist
 Flag positions or macro indicators to monitor over next 6-12 months:
@@ -502,8 +517,6 @@ the output-template.md requirements:
 7. Recommendations section contains:
    - At least one recommendation (unless analysis genuinely finds no
      action needed, in which case state this explicitly)
-   - Action Summary Table with all required columns including Size (% NAV)
-     and Source tag
    - Every recommendation has: source tag, action, ticker, account,
      position size, strategic intent, proceeds deployment (for
      TRIM/EXIT/REBALANCE), tax note, tradeoff, priority
@@ -513,16 +526,19 @@ the output-template.md requirements:
     holdings in the same currency; uninvested cash >5% of liquid NAV
     is flagged. If any optimization was missed, revise the recommendation
     before reporting completion.
-9. Steelman Check is present for top 3 recommendations
-10. Stress Testing section present with at least 2 scenarios, each with
+9. Action Plan section contains a unified Action Summary Table (with
+    Deployment column: "Immediate" or "Staged: N weeks") followed by
+    deployment schedules (tranche tables with abort conditions) for all
+    staged recommendations. No separate "Staged Deployment Plan" section
+    exists. Immediate-execution recommendations grouped in one line.
+10. Steelman Check is present for top 3 recommendations
+11. Stress Testing section present with at least 2 scenarios, each with
     position-level impact table
-11. Hedge Playbook section present with: vol regime context, per-scenario
+12. Hedge Playbook section present with: vol regime context, per-scenario
     hedge tables (instrument, type, strike, expiry, delta, size, cost,
     activation, drawdown offset), per-hedge rationale, hedge portfolio
     summary (overlap analysis, consolidated cost, cost-efficiency ranking,
     minimum viable hedge). Data source labels on all cost figures.
-12. Staged Deployment Plan present for all ADD/REBALANCE recommendations
-    above 1% liquid NAV
 13. Watchlist contains specific items with trigger conditions
 14. Monitoring Framework present with all three tiers (monthly macro,
     weekly position, regime shift signals)
