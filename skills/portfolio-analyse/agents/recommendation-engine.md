@@ -156,6 +156,55 @@ For each recommendation:
 - Tradeoff: what you give up by taking this action
 - Priority: High / Medium / Low
 
+### 1.5. Implementation Optimization Check
+
+After generating all recommendations, review each one for implementation
+efficiency. For every recommendation, ask: "Is there a strictly better
+instrument that delivers the same exposure plus additional benefits?"
+
+**Mandatory checks:**
+
+1. **Currency views:** If recommending a naked FX position (e.g. long
+   EUR/USD via IB FX), check whether a money market fund or short-term
+   government bond ETF denominated in the target currency would provide
+   the same directional exposure plus yield. Example: long EUR/USD as
+   naked FX has ~1.5% negative carry, but buying XEON or CSH2 (EUR
+   money market ETFs) gives the same EUR appreciation exposure plus
+   ~2% yield. Always prefer the yield-bearing alternative unless there
+   is a specific reason not to (e.g. leverage, precise notional control,
+   short holding period where ETF transaction costs exceed carry benefit).
+   Note: if the investor already holds money market ETFs in the target
+   currency, recommend adding to those existing positions rather than
+   opening a new instrument.
+
+2. **Cash deployment:** If the portfolio holds significant uninvested
+   cash in any currency, check whether that cash should be deployed into
+   money market funds or short-term instruments for yield. Uninvested
+   cash earning 0% when money market ETFs yield 2-4% is an implicit cost.
+   Flag this if uninvested cash exceeds 5% of liquid NAV.
+
+3. **Commodity exposure:** If recommending commodity exposure, compare
+   physical holdings, futures-based ETFs (roll cost drag), and
+   physically-backed ETCs. Prefer physically-backed ETCs for buy-and-hold
+   (no roll cost). Note when the investor already holds physical
+   (e.g. gold/silver) and an ETC would be adding liquid, tradeable
+   exposure alongside illiquid physical.
+
+4. **Duplicate currency conversion:** If recommending a new position
+   denominated in a currency the investor already holds as cash or
+   money market (e.g. EUR cash or XEON), note that the purchase can be
+   funded from existing currency balances without FX conversion cost.
+
+5. **Hedge instrument selection:** If recommending a hedge, check
+   whether existing portfolio positions already provide partial
+   offsetting exposure. Do not recommend buying protection for a risk
+   that is already naturally hedged by another holding.
+
+If an optimization applies, revise the recommendation's instrument,
+rationale, and cost analysis accordingly. Note the optimization in the
+recommendation text: "Implementation note: [explanation of why this
+instrument was chosen over the naive alternative]."
+
 ### 2. Steelman Check
 For the top 3 recommendations:
 - What is the strongest case against this recommendation?
@@ -458,26 +507,31 @@ the output-template.md requirements:
    - Every recommendation has: source tag, action, ticker, account,
      position size, strategic intent, proceeds deployment (for
      TRIM/EXIT/REBALANCE), tax note, tradeoff, priority
-8. Steelman Check is present for top 3 recommendations
-9. Stress Testing section present with at least 2 scenarios, each with
-   position-level impact table
-10. Hedge Playbook section present with: vol regime context, per-scenario
+8. Implementation optimization: no recommendation uses a naked FX
+    position when a yield-bearing money market ETF in the target currency
+    is available; no recommendation ignores existing cash/money market
+    holdings in the same currency; uninvested cash >5% of liquid NAV
+    is flagged. If any optimization was missed, revise the recommendation
+    before reporting completion.
+9. Steelman Check is present for top 3 recommendations
+10. Stress Testing section present with at least 2 scenarios, each with
+    position-level impact table
+11. Hedge Playbook section present with: vol regime context, per-scenario
     hedge tables (instrument, type, strike, expiry, delta, size, cost,
     activation, drawdown offset), per-hedge rationale, hedge portfolio
     summary (overlap analysis, consolidated cost, cost-efficiency ranking,
     minimum viable hedge). Data source labels on all cost figures.
-11. Staged Deployment Plan present for all ADD/REBALANCE recommendations
+12. Staged Deployment Plan present for all ADD/REBALANCE recommendations
     above 1% liquid NAV
-12. Watchlist contains specific items with trigger conditions
-13. Monitoring Framework present with all three tiers (monthly macro,
+13. Watchlist contains specific items with trigger conditions
+14. Monitoring Framework present with all three tiers (monthly macro,
     weekly position, regime shift signals)
-14. If comparison mode: Comparison Analysis and Decision Triggers present
-15. If prior analysis exists: Previous Analysis Delta section is present
-16. Escalation Flags section present (even if "No escalation flags triggered")
-17. Appendix: Full Position List is present, includes off-platform positions,
+15. If comparison mode: Comparison Analysis and Decision Triggers present
+16. If prior analysis exists: Previous Analysis Delta section is present
+17. Escalation Flags section present (even if "No escalation flags triggered")
+18. Appendix: Full Position List is present, includes off-platform positions,
     and is sorted by market value
-
-18. Abbreviation and label footnotes: every table or paragraph that
+19. Abbreviation and label footnotes: every table or paragraph that
     introduces a bracket label (e.g. `[GEO]`, `[RV]`, `[INTEL]`,
     `[USD_DET]`, `[IMPACT-DRIVEN]`, `[OPPORTUNITY-SCORER]`, `[LIVE]`,
     `[ESTIMATED]`, `[FACT]`, `[INFERENCE]`) or financial abbreviation
