@@ -1,29 +1,32 @@
 ---
-name: ib-analyseportfolio
+name: portfolio-analyse
 description: >
-  Analyse an investment portfolio held across two Interactive Brokers accounts
-  against a specific thesis, research, or market conditions. Operates in four
-  modes: (1) Thesis mode - user provides an MD file with research, macro thesis,
-  or transcript analysis; (2) YouTube mode - user provides a YouTube URL,
-  the skill extracts the transcript via the yt-transcript skill (supports
-  auto-translated and non-English videos) and analyses the portfolio against
-  the video content; (3) Market scan mode - no input provided, the skill
-  performs a broad web search for current macro/market developments and analyses
-  the portfolio against those findings; (4) Comparison mode - user provides
-  two inputs (any combination of MD files and/or YouTube URLs), the skill
-  analyses both perspectives against the portfolio and highlights where they
-  agree, conflict, and what that means for positioning. Use this skill when
-  the user wants to: assess how news/research/events/videos impact their
-  portfolio, get portfolio-wide risk analysis, check concentration or currency
-  exposure, get tax-aware recommendations across corporate and personal accounts,
-  run a broad market scan, or compare two opposing views against their holdings.
-  Also trigger when the user mentions "portfolio analysis", "position review",
+  Analyse an investment portfolio held across Interactive Brokers accounts and
+  off-platform holdings (physical precious metals, cryptocurrency, private
+  equity options, real estate) against a specific thesis, research, or market
+  conditions. Off-platform assets are treated as first-class positions alongside
+  IB holdings in all analysis stages. Operates in four modes: (1) Thesis mode -
+  user provides an MD file with research, macro thesis, or transcript analysis;
+  (2) YouTube mode - user provides a YouTube URL, the skill extracts the
+  transcript via the yt-transcript skill (supports auto-translated and
+  non-English videos) and analyses the portfolio against the video content;
+  (3) Market scan mode - no input provided, the skill performs a broad web
+  search for current macro/market developments and analyses the portfolio
+  against those findings; (4) Comparison mode - user provides two inputs
+  (any combination of MD files and/or YouTube URLs), the skill analyses both
+  perspectives against the portfolio and highlights where they agree, conflict,
+  and what that means for positioning. Use this skill when the user wants to:
+  assess how news/research/events/videos impact their portfolio, get
+  portfolio-wide risk analysis, check concentration or currency exposure, get
+  tax-aware recommendations across IB and off-platform accounts, run a broad
+  market scan, or compare two opposing views against their holdings. Also
+  trigger when the user mentions "portfolio analysis", "position review",
   "market impact on my holdings", "what should I do with my portfolio", "analyse
   this video against my portfolio", "compare these two views", or references
-  their IB accounts in an investment context.
+  their IB accounts or off-platform holdings in an investment context.
 ---
 
-# IB Portfolio Analysis Engine
+# Portfolio Analysis Engine
 
 ## Configuration
 
@@ -34,15 +37,11 @@ INTERMEDIATE_FILE_MAX_AGE_DAYS = 7
 RESEARCH_CACHE_MAX_AGE_HOURS = 24
 MAX_ESCALATION_RETRIES = 1
 DATA_QUALITY_UNAVAILABLE_THRESHOLD_PCT = 20
-PROJECT_DIR = <YOUR_PROJECT_DIR>
-OUTPUT_DIR = <YOUR_PROJECT_DIR>/output/ib-analysis
-SKILL_DIR = <YOUR_PROJECT_DIR>/.claude/skills/ib-analyseportfolio
-AGENTS_DIR = <YOUR_PROJECT_DIR>/.claude/agents
+PROJECT_DIR = [YOUR_PROJECT_DIR]
+OUTPUT_DIR = [YOUR_PROJECT_DIR]/output/ib-analysis
+SKILL_DIR = [YOUR_PROJECT_DIR]/.claude/skills/portfolio-analyse
+AGENTS_DIR = [YOUR_PROJECT_DIR]/.claude/agents
 ```
-
-> **Setup required:** Replace `<YOUR_PROJECT_DIR>` with your actual project
-> directory (e.g., `/home/user/projects/my-project`). This is the root
-> directory where Claude Code runs. The skill will not work without valid paths.
 
 ## Output Directory Structure
 
@@ -94,6 +93,101 @@ Call `ib_portfolio_summary(account="all")`. Do NOT use `force_refresh=true` unle
 **Validate portfolio data** (applies to both cached and fresh snapshots):
 - At least one account must have non-zero NAV. If all zero: stop and report.
 - Positions key must be present (can be empty array for cash-only portfolios). If missing: stop and report malformed data.
+
+### Step 2.5: Enrich portfolio with off-platform holdings
+
+After obtaining the IB portfolio snapshot (fresh or cached), merge off-platform holdings from `investor-context.md` into the portfolio JSON so all downstream subagents see a unified portfolio.
+
+**If using a cached snapshot that already contains off-platform positions** (check for `off_platform` key in `balances`): skip this step. The cached snapshot is already enriched.
+
+**Otherwise:**
+
+1. Read `SKILL_DIR/references/investor-context.md`. Parse the Off-Platform Holdings section to extract: precious metals (type, quantity), cryptocurrency (type, quantity), private equity/options (name, quantity, FMV), real estate (properties, values).
+
+2. **Fetch current spot prices** via WebSearch:
+   - Gold spot price per troy oz (USD)
+   - Silver spot price per troy oz (USD)
+   - Bitcoin spot price (USD)
+   - Record the prices and timestamp in the JSON under a `spot_prices` key
+
+3. **Construct off-platform position objects** and append to the `positions` array. Each position uses the same field structure as IB positions, plus `source: "manual"` and `liquidity` fields:
+
+   ```json
+   {
+     "account": "off_platform",
+     "account_label": "Off-Platform",
+     "tax_treatment": "no_capital_gains_tax",
+     "ticker": "GOLD_PHYSICAL",
+     "description": "Physical Gold Bullion",
+     "asset_class": "COMMODITY",
+     "currency": "USD",
+     "position": 4,
+     "unit": "oz",
+     "market_price": <gold_spot>,
+     "market_value": <4 * gold_spot>,
+     "average_cost": 0,
+     "unrealized_pnl": 0,
+     "sector": "Precious Metals",
+     "base_market_value": <4 * gold_spot>,
+     "base_unrealized_pnl": 0,
+     "fx_rate": 1,
+     "source": "manual",
+     "liquidity": "liquid"
+   }
+   ```
+
+   Create similar objects for:
+   - `SILVER_PHYSICAL`: asset_class `COMMODITY`, sector `Precious Metals`
+   - `BTC`: asset_class `CRYPTO`, sector `Cryptocurrency`
+   - `PAYWARD_OPTIONS`: asset_class `OPT`, sector `Private Equity / Fintech`, use FMV from investor-context.md as market_price, liquidity `liquid`
+   - `REAL_ESTATE_PRIMARY`: asset_class `REAL_ESTATE`, sector `Real Estate`, liquidity `illiquid`
+   - `REAL_ESTATE_INVESTMENT`: asset_class `REAL_ESTATE`, sector `Real Estate`, liquidity `illiquid`
+
+   For real estate: use the values from investor-context.md directly (no spot price needed). Tax treatment for real estate: `no_capital_gains_tax` (per local tax treatment in investor-context.md).
+
+4. **Add `off_platform` entry to `balances`:**
+   ```json
+   "off_platform": {
+     "label": "Off-Platform Holdings",
+     "nav": <sum of all off-platform liquid positions>,
+     "cash": 0,
+     "total_positions_value": <sum of all off-platform positions incl. illiquid>,
+     "base_currency": "USD",
+     "source": "manual",
+     "illiquid_value": <sum of real estate positions>
+   }
+   ```
+
+5. **Update `combined` balances:**
+   - Add `ib_nav`: original `total_nav` (IB-only)
+   - Add `off_platform_liquid_nav`: sum of off-platform liquid positions (precious metals + crypto + private equity options)
+   - Add `liquid_nav`: `ib_nav` + `off_platform_liquid_nav`
+   - Add `illiquid_nav`: sum of real estate values
+   - Add `total_wealth`: `liquid_nav` + `illiquid_nav`
+   - Keep original `total_nav`, `total_cash`, `total_positions_value` for IB-only reference
+
+6. **Recompute `allocations`** to include off-platform positions:
+   - `by_asset_class`: add COMMODITY, CRYPTO, OPT, REAL_ESTATE categories. Use `liquid_nav` as denominator for percentage calculations (not IB NAV). Mark each entry with `includes_off_platform: true`.
+   - `by_sector`: add Precious Metals, Cryptocurrency, Private Equity / Fintech, Real Estate sectors.
+   - `by_currency`: add off-platform USD values to the USD total.
+   - `by_geography`: add off-platform under "Other" or appropriate geography.
+   - `by_account`: add `off_platform` account entry.
+
+7. **Recompute `concentration_flags`** on the full portfolio using `liquid_nav` as the denominator. Flag any single position or sector exceeding 10% of liquid NAV. Include off-platform positions in this check.
+
+8. **Add `spot_prices` to the JSON:**
+   ```json
+   "spot_prices": {
+     "gold_usd_oz": <price>,
+     "silver_usd_oz": <price>,
+     "btc_usd": <price>,
+     "fetched_at": "<ISO timestamp>"
+   }
+   ```
+
+9. **Save** the enriched JSON to the same file path (overwriting the IB-only version). Apply `chmod 600`.
+
+**Validation:** Verify that `combined.liquid_nav` > `combined.ib_nav` (off-platform adds value). If spot price fetching fails for any asset, use the most recent known price from a previous portfolio-summary JSON if available, or fall back to the FMV in investor-context.md. Log which prices are stale.
 
 ### Step 3: Determine mode and resolve inputs
 
@@ -340,6 +434,7 @@ Keep the most recent set of each for debugging.
 | Gateway not running | Call ib_start_gateway, prompt user for auth |
 | Auth expired | Call ib_reauthenticate, prompt user to complete login |
 | Zero NAV across all accounts | Stop. Report data issue. |
+| Spot price fetch fails | Use previous snapshot price or investor-context FMV. Log staleness. |
 | yt-transcript skill missing | Tell user to install yt-transcript skill |
 | YouTube transcript extraction fails | Report error, offer Market Scan mode instead |
 | Market researcher fails | Inform user, offer retry or use stale cache |
@@ -355,7 +450,8 @@ Keep the most recent set of each for debugging.
 
 ## Notes
 
-- The orchestrator itself is lightweight. It validates inputs, checks caches, dispatches subagents, and presents results. All heavy reasoning happens in the subagents.
+- The orchestrator itself is lightweight. It validates inputs, checks caches, enriches portfolio data with off-platform holdings, dispatches subagents, and presents results. All heavy reasoning happens in the subagents.
+- The portfolio-summary JSON is enriched in Step 2.5 to include off-platform holdings as first-class positions. Subagents see a unified portfolio and do not need to read investor-context.md separately for off-platform data.
 - Subagents receive file paths, not file contents. This keeps the orchestrator's context window clean.
 - Each subagent runs in its own isolated context window via the Agent tool.
 - Subagents run sequentially because each depends on the previous stage's output (except the escalation loop which re-runs specific stages).

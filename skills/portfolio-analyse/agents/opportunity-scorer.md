@@ -20,7 +20,10 @@ You will receive file paths to:
 - Market research report (from market-researcher subagent, contains regime
   classification, credit cycle positioning, geopolitical risk overlay)
 - Portfolio summary JSON (portfolio-summary-{timestamp}.json: current
-  holdings, allocations, concentration flags)
+  holdings including off-platform positions, allocations, concentration flags).
+  Off-platform positions (precious metals, crypto, private equity options,
+  real estate) appear in the `positions` array with `account: "off_platform"`.
+  Include them when checking for portfolio overlaps with opportunities.
 - investor-context.md (standing theses, investor profile, risk tolerance)
 
 ## Input Validation

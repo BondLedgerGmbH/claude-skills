@@ -14,7 +14,7 @@ When you ask Claude Code to perform a task that matches a skill's trigger, it lo
 |-------|-------------|
 | [skill-security-scanner](skills/skill-security-scanner/) | Scans AI skill packages for security risks, vulnerabilities, backdoors, and prompt injection. Acts as a Senior Security Engineer. |
 | [yt-transcript](skills/yt-transcript/) | Extracts YouTube video transcripts and produces structured summaries with key takeaways. Handles non-English videos via auto-translation. Outputs markdown + PDF. |
-| [ib-analyseportfolio](skills/ib-analyseportfolio/) | Analyses an Interactive Brokers portfolio against a thesis, YouTube video, market scan, or comparison of two views. Runs a 4-subagent pipeline (market research, opportunity scoring, impact analysis, recommendations). |
+| [portfolio-analyse](skills/portfolio-analyse/) | Analyses a portfolio (IB accounts + off-platform holdings) against a thesis, YouTube video, market scan, or comparison of two views. Runs a 4-subagent pipeline (market research, opportunity scoring, impact analysis, recommendations). |
 
 ## Installation
 
@@ -41,19 +41,19 @@ cp -r /tmp/claude-skills/skills/* ~/.claude/skills/
 rm -rf /tmp/claude-skills
 ```
 
-### Install ib-analyseportfolio (additional steps)
+### Install portfolio-analyse (additional steps)
 
-The IB portfolio analysis skill uses four subagents that need to be placed in `~/.claude/agents/`:
+The portfolio analysis skill uses four subagents that need to be placed in `~/.claude/agents/`:
 
 ```bash
 git clone https://github.com/xjarko123/claude-skills.git /tmp/claude-skills
 
 # Copy the skill
-cp -r /tmp/claude-skills/skills/ib-analyseportfolio ~/.claude/skills/
+cp -r /tmp/claude-skills/skills/portfolio-analyse ~/.claude/skills/
 
 # Copy the subagents
 mkdir -p ~/.claude/agents
-cp /tmp/claude-skills/skills/ib-analyseportfolio/agents/*.md ~/.claude/agents/
+cp /tmp/claude-skills/skills/portfolio-analyse/agents/*.md ~/.claude/agents/
 
 # Clean up
 rm -rf /tmp/claude-skills
@@ -61,8 +61,8 @@ rm -rf /tmp/claude-skills
 
 Then configure the skill:
 
-1. **Set paths:** Open `~/.claude/skills/ib-analyseportfolio/SKILL.md` and replace all `<YOUR_PROJECT_DIR>` with the absolute path to your Claude Code project directory (e.g., `/home/user/projects/my-project`)
-2. **Set investor profile:** Open `~/.claude/skills/ib-analyseportfolio/references/investor-context.md` and replace all `[PLACEHOLDER]` values with your actual data (age, location, accounts, holdings, theses)
+1. **Set paths:** Open `~/.claude/skills/portfolio-analyse/SKILL.md` and replace all `[YOUR_PROJECT_DIR]` with the absolute path to your Claude Code project directory (e.g., `/home/user/projects/my-project`)
+2. **Set investor profile:** Open `~/.claude/skills/portfolio-analyse/references/investor-context.md` and replace all `[PLACEHOLDER]` values with your actual data (age, location, accounts, holdings, theses)
 3. **Configure account names:** The skill references IB accounts by their names in the ib-connect MCP server config. Make sure the account names in `investor-context.md` match those in your `ib-connect` configuration.
 
 The skill will not work without valid paths and will not produce accurate results without a properly configured `investor-context.md`. See the file itself for detailed comments on each section.

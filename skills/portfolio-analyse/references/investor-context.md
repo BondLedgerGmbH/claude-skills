@@ -40,9 +40,10 @@
 - Crypto: [e.g., Verify current treatment of digital assets in your jurisdiction]
 
 ### Off-Platform Holdings (Not in IB)
-These assets are held outside Interactive Brokers and are not visible
-in portfolio data pulls. Subagents must factor them into total wealth
-calculations, concentration analysis, and recommendations.
+These assets are held outside Interactive Brokers. The orchestrator merges
+them into the portfolio-summary JSON at runtime (Step 2.5) with current
+spot prices. Subagents see them as positions with `account: "off_platform"`
+and `source: "manual"`. Update quantities here when holdings change.
 
 <!-- List any assets held outside IB. Remove sections that don't
      apply. Use current market values. -->
@@ -70,13 +71,10 @@ calculations, concentration analysis, and recommendations.
 - Note: Illiquid. Include in total wealth and asset allocation
   calculations. Do not include in liquid net worth.
 
-**Subagent instructions:** When calculating total wealth, sum IB NAV +
-off-platform holdings at current valuations. When assessing
-concentration, allocation, or recommending new positions, account for
-these holdings to avoid double-exposures (e.g., do not recommend
-adding gold if precious metals allocation is already substantial).
-Distinguish between liquid wealth (IB + precious metals + crypto)
-and total wealth (liquid + options + real estate) where relevant.
+**Note:** These holdings are injected into the portfolio-summary JSON by the
+orchestrator. The JSON `combined.liquid_nav` includes all liquid off-platform
+assets. The `combined.total_wealth` includes illiquid real estate.
+Subagents do not need to calculate these values manually.
 
 ## Standing Theses
 

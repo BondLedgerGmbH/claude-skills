@@ -21,13 +21,32 @@
 - Credit cycle phase (from market research)
 - Data quality status: NORMAL or LOW-CONFIDENCE (from market research)
 - Global market research: fresh or cached (if cached, show age)
-- Combined portfolio NAV
-- Number of positions across both accounts
+- Combined IB NAV
+- Liquid NAV (IB + off-platform liquid assets)
+- Total Wealth (including illiquid real estate)
+- Number of positions across all accounts (IB + off-platform)
+- Spot prices used for off-platform valuations (gold/oz, silver/oz, BTC) with fetch timestamp
 
 ### Portfolio Snapshot
-- Combined allocation table (asset class, sector, currency, geography)
-- Top 10 positions by market value (with account label)
-- Concentration flags
+
+All allocation tables use **liquid NAV** as the denominator for percentage
+calculations. Off-platform positions appear alongside IB positions in every
+table. They are marked with account "Off-Platform" to distinguish them from
+IB accounts.
+
+- Combined allocation tables (asset class, sector, currency, geography).
+  Asset class table must include: equities, ETFs, cash/money market,
+  commodities (precious metals), cryptocurrency, private equity/options,
+  and real estate (marked illiquid).
+- Off-platform holdings detail table:
+
+| Asset | Quantity | Spot Price | Value (USD) | % Liquid NAV | Source |
+|-------|----------|------------|-------------|--------------|--------|
+
+  Where Source is the price source (e.g., "spot 2026-03-05", "FMV per investor context").
+
+- Top 10 positions by market value (with account label, including off-platform)
+- Concentration flags (computed on full portfolio including off-platform)
 
 ### Global Market Context
 Summary of the global market research findings, structured by the
@@ -165,5 +184,8 @@ or "No escalation flags triggered." This section is consumed by
 the orchestrator to decide whether to re-dispatch upstream subagents.
 
 ### Appendix: Full Position List
-Complete position list across both accounts with current values.
-Sorted by market value descending.
+Complete position list across all accounts (IB + off-platform) with current
+values. Off-platform positions included alongside IB positions. Sorted by
+market value descending. Each row shows: ticker/asset name, account,
+currency, quantity, price, market value (USD), % of liquid NAV, unrealized
+P&L (0 for off-platform if cost basis unknown).

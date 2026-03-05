@@ -45,9 +45,11 @@ a calculated position size:
   - No single new position >5% of liquid NAV
   - No single sector >30% cumulative exposure after addition
 
-- **Liquid NAV:** IB NAV (both accounts) + off-platform liquid assets
-  (precious metals at spot, crypto at spot, Payward options at FMV).
-  Exclude real estate.
+- **Liquid NAV:** Pre-computed in the portfolio-summary JSON as
+  `combined.liquid_nav`. This includes IB NAV + off-platform liquid assets
+  (precious metals at spot, crypto at spot, private equity options at FMV).
+  Real estate is excluded (illiquid). Use this value directly; do not
+  calculate manually from investor-context.md.
 
 State the formula and resulting size explicitly in each recommendation.
 
@@ -68,11 +70,18 @@ and regional divergence pair trades. If data quality is LOW-CONFIDENCE,
 cap maximum conviction at Medium.
 
 ### 1. Portfolio Snapshot
-- Combined NAV across both accounts
-- Allocation by: asset class, sector, geography, currency denomination
-- Per-account breakdown (for tax-aware recommendations)
-- Concentration flags: as computed by MCP server using configured thresholds
-  (included in portfolio-summary-{timestamp}.json)
+- Combined NAV across all accounts (IB + off-platform). The portfolio-summary
+  JSON contains both IB and off-platform positions in a single `positions`
+  array. Off-platform positions have `account: "off_platform"` and
+  `source: "manual"`. Real estate positions have `liquidity: "illiquid"`.
+- Allocation by: asset class, sector, geography, currency denomination.
+  Use `combined.liquid_nav` as the denominator for all percentage calculations.
+  Off-platform asset classes include COMMODITY (precious metals), CRYPTO,
+  OPT (private equity options), and REAL_ESTATE.
+- Per-account breakdown (for tax-aware recommendations): include off_platform
+  as a separate account alongside IB accounts.
+- Concentration flags: pre-computed in the JSON on the full portfolio
+  (IB + off-platform). Report as provided.
 - Margin assessment: the portfolio data contains `maintenance_margin_req`
   and `margin_borrowed`. `maintenance_margin_req` is the equity IB requires
   to hold current positions (always non-zero for margin accounts with
@@ -81,11 +90,18 @@ cap maximum conviction at Medium.
   Do not confuse the maintenance requirement with actual borrowing.
 
 ### 2. Correlation and Cluster Analysis
-- Identify groups of holdings likely to move together in drawdowns
+- Identify groups of holdings likely to move together in drawdowns.
+  Include off-platform assets in cluster identification:
+  - Physical precious metals form a commodity/hedge cluster
+    (correlated with inflation expectations, inversely correlated with
+    real yields and risk appetite)
+  - Bitcoin forms a crypto/volatility cluster (correlated with risk
+    appetite and liquidity conditions, partially correlated with tech)
+  - private equity options have fintech/crypto sector correlation
 - Flag indirect exposures (e.g., ETFs with heavy NVDA weighting,
   cloud providers dependent on AI capex)
-- Assess USD concentration across all holdings
-  (including USD-denominated equities, ETFs, stablecoins)
+- Assess USD concentration across all holdings including off-platform
+  (precious metals quoted in USD, Bitcoin in USD, private equity options in USD)
 
 ### 2.5. New Opportunity Overlap Assessment
 For each opportunity from the opportunity-scorer, check against existing
@@ -105,7 +121,10 @@ For each relevant position or cluster:
 - Timeframe: immediate, 3-6 months, 12+ months
 
 ### 4. Currency Exposure Analysis
-- Total USD exposure (direct + indirect)
+- Total USD exposure (direct + indirect). Off-platform assets are
+  USD-denominated in the portfolio JSON (precious metals and crypto
+  are globally priced in USD, private equity options are USD-denominated). Include them
+  in USD totals. Real estate is in local currency (CHF).
 - CHF, EUR, and other currency exposures
 - Recommended target allocation aligned with USD thesis
 - Hedging mechanisms if appropriate
@@ -125,16 +144,22 @@ For each recommendation:
 - Action: [TRIM], [EXIT], [ADD], [REBALANCE], [HEDGE]
 - Strategic intent: [RISK MITIGATION], [GROWTH OPTIMIZATION], [USD HEDGE]
 - Instrument: specific ticker, exchange, currency
-- Target account: specify account1 or account2 (or both), using the
-  account names from investor-context.md and ib-connect MCP configuration
+- Target account: specify account1, account2, or off_platform, using the
+  account names from investor-context.md and ib-connect MCP configuration.
+  Off-platform recommendations are advisory (user must execute outside IB).
+  Mark off-platform actions with a note: "Off-platform: manual execution required."
 - Position size: per Position Sizing Methodology (conviction, base %,
   volatility modifier, resulting size)
 - Rationale: why this action, referencing the thesis/event or opportunity
 - Proceeds deployment (required for TRIM, EXIT, REBALANCE): where the
   freed capital goes. Must be specific. Never leave proceeds unaddressed.
+  For off-platform TRIM/EXIT, note that proceeds may not be immediately
+  deployable to IB (transfer time, custody logistics).
 - Tax note:
-  - Personal: no capital gains tax; flag dividend withholding if relevant
+  - Personal account: no capital gains tax; flag dividend withholding if relevant
   - Corporate account: corporate tax impact; participation exemption eligibility
+  - Off-platform: apply personal tax treatment (local tax rules per investor-context.md)
+    unless the asset is held in a corporate structure
 - Tradeoff: what you give up by taking this action
 - Priority: High / Medium / Low
 

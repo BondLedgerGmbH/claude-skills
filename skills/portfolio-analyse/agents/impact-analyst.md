@@ -19,7 +19,15 @@ You will receive file paths to:
 - Global market research report (from market-researcher subagent)
 - Opportunity scoring report (from opportunity-scorer subagent; may be absent)
 - Thesis/transcript input (if thesis, YouTube, or comparison mode)
-- Full portfolio data (portfolio-summary-{timestamp}.json: positions, balances, allocations, concentration flags)
+- Full portfolio data (portfolio-summary-{timestamp}.json: positions, balances,
+  allocations, concentration flags). This JSON contains both IB positions and
+  off-platform holdings (physical precious metals, cryptocurrency, private
+  equity options, real estate) in a single `positions` array. Off-platform
+  positions have `account: "off_platform"` and `source: "manual"`. Real estate
+  positions have `liquidity: "illiquid"`. The `combined` balances include
+  `liquid_nav` (IB + off-platform liquid) and `total_wealth` (including
+  illiquid). Treat off-platform positions identically to IB positions in all
+  analysis steps.
 - investor-context.md (investor profile, account structure, standing theses)
 - analysis-framework.md (analytical methodology)
 - Mode identifier (thesis/youtube/scan/comparison)
@@ -57,17 +65,58 @@ Before starting analysis, verify all input files:
 ## Analysis Steps
 
 ### 1. Portfolio Snapshot
-- Combined NAV across both accounts
-- Allocation by: asset class, sector, geography, currency denomination
-- Per-account breakdown (for tax-aware recommendations)
-- Concentration flags: any single position or sector exceeding 10% of combined portfolio
+- Combined NAV across all accounts (IB + off-platform). Use `combined.liquid_nav`
+  from the portfolio JSON as the primary denominator for all percentage calculations.
+  Report `combined.ib_nav` separately for reference.
+- Allocation by: asset class, sector, geography, currency denomination. Include
+  off-platform asset classes (COMMODITY, CRYPTO, OPT, REAL_ESTATE) in all tables.
+- Per-account breakdown including off_platform as a separate account
+- Concentration flags: from portfolio JSON (pre-computed on full portfolio)
 
 ### 2. Correlation and Cluster Analysis
-- Identify groups of holdings likely to move together in drawdowns
+- Identify groups of holdings likely to move together in drawdowns.
+  Include off-platform assets in cluster identification:
+  - Physical precious metals: commodity/hedge cluster (correlated with
+    inflation expectations, inversely correlated with real yields)
+  - Bitcoin: crypto/volatility cluster (correlated with risk appetite,
+    partially correlated with tech sector)
+  - private equity options: fintech/crypto sector correlation
 - Flag indirect exposures (e.g., ETFs with heavy NVDA weighting,
   cloud providers dependent on AI capex)
-- Assess USD concentration across all holdings
-  (including USD-denominated equities, ETFs, stablecoins)
+- Assess USD concentration across all holdings including off-platform
+  (precious metals, crypto, and private equity options are all USD-denominated)
+
+### 2.5. New Opportunity Overlap Assessment
+
+Skip this step if no opportunity scoring report was provided.
+
+For each opportunity in the opportunity-scorer's table, check against
+the current portfolio:
+
+1. **Direct overlap**: Does this opportunity share a ticker with an
+   existing holding? (e.g., recommending to add AMZN when AMZN is
+   already held in the corporate account, or recommending gold when
+   physical gold is already held off-platform)
+2. **Sector/theme overlap**: Does this opportunity fall in the same
+   sector or thesis cluster as existing holdings? Would it increase
+   concentration in an already-heavy sector?
+3. **Correlation cluster overlap**: Using the clusters identified in
+   Step 2, would adding this opportunity increase the size of an
+   existing correlated cluster?
+4. **Standing thesis alignment**: Does the opportunity align with or
+   contradict the investor's standing theses from investor-context.md?
+
+Output an overlap assessment table:
+
+| Opportunity | Overlaps With | Overlap Type | Cluster Impact | Assessment |
+|-------------|---------------|--------------|----------------|------------|
+
+Where Assessment is one of:
+- `PROCEED`: no meaningful overlap with existing portfolio
+- `CAUTION`: partial overlap exists; note which holdings overlap and
+  the resulting combined exposure if added
+- `REDUNDANT`: substantially duplicates existing exposure; recommend
+  skip unless the recommendation-engine provides explicit justification
 
 ### 2.5. New Opportunity Overlap Assessment
 

@@ -22,7 +22,12 @@ You will receive file paths to:
 - Impact analysis (from impact-analyst subagent)
 - Global market research cache (from market-researcher subagent, for the Global Market Context output section)
 - Opportunity scoring report (from opportunity-scorer subagent; may be absent)
-- Full portfolio data (portfolio-summary-{timestamp}.json: positions, balances, allocations)
+- Full portfolio data (portfolio-summary-{timestamp}.json: positions, balances,
+  allocations). This JSON contains both IB and off-platform positions in a
+  single `positions` array. Off-platform positions have `account: "off_platform"`
+  and `source: "manual"`. The `combined` balances include `liquid_nav`
+  (IB + off-platform liquid) and `total_wealth` (including illiquid real estate).
+  Treat off-platform positions identically to IB positions in all analysis.
 - investor-context.md (investor profile, standing theses, analyst expectations)
 - output-template.md (required output structure)
 - Previous portfolio-analysis-*.md (if exists, for delta analysis)
@@ -79,9 +84,10 @@ a calculated position size using this methodology:
   a breach, reduce the position size to stay within the cap
 
 **Liquid NAV calculation:**
-- IB NAV (both accounts) + off-platform liquid assets (precious metals
-  at spot, crypto at spot, Payward options at FMV)
-- Exclude real estate (illiquid)
+- Pre-computed in the portfolio-summary JSON as `combined.liquid_nav`.
+  This includes IB NAV + off-platform liquid assets (precious metals at spot,
+  crypto at spot, private equity options at FMV). Real estate is excluded (illiquid).
+  Use this value directly; do not calculate manually.
 
 State the formula and the resulting size explicitly in each recommendation
 so the user can adjust the inputs.
@@ -108,9 +114,11 @@ For each recommendation:
 - Action: `[TRIM]`, `[EXIT]`, `[ADD]`, `[REBALANCE]`, `[HEDGE]`
 - Strategic intent: `[RISK MITIGATION]`, `[GROWTH OPTIMIZATION]`, `[USD HEDGE]`
 - Instrument: specific ticker, exchange, currency of denomination
-- Target account: specify account1 or account2 (or both), using the
+- Target account: specify account1, account2, or off_platform, using the
   account names from investor-context.md and ib-connect MCP configuration,
-  with rationale
+  with rationale. For off-platform recommendations: note "Off-platform:
+  manual execution required." Off-platform TRIM/EXIT proceeds may not be
+  immediately deployable to IB (transfer time, custody logistics).
 - Position size: calculated per the Position Sizing Methodology above.
   State: conviction level, base allocation %, volatility modifier (if any),
   resulting target size in % and absolute USD amount.
@@ -122,8 +130,10 @@ For each recommendation:
   multiple targets, state the split. If proceeds should remain as cash,
   state why. Never leave proceeds unaddressed.
 - Tax note:
-  - Personal: no capital gains tax; flag dividend withholding if relevant
+  - Personal account: no capital gains tax; flag dividend withholding if relevant
   - Corporate account: corporate tax impact; participation exemption eligibility
+  - Off-platform: apply personal tax treatment (local tax rules per investor-context.md)
+    unless the asset is held in a corporate structure
 - Tradeoff: what you give up by taking this action
 - Priority: High / Medium / Low
 
@@ -268,9 +278,11 @@ sections should be incorporated from the earlier subagent outputs.
 ## Output Validation
 Before reporting completion, re-read the output file and verify against
 the output-template.md requirements:
-1. Header section is present with: date, mode, research freshness, NAV,
-   position count, regime classification, data quality status
-2. Portfolio Snapshot contains allocation tables and concentration flags
+1. Header section is present with: date, mode, research freshness, IB NAV,
+   liquid NAV, total wealth, position count, regime classification, data
+   quality status, spot prices used for off-platform valuations
+2. Portfolio Snapshot contains allocation tables (including off-platform
+   asset classes), off-platform holdings detail table, and concentration flags
 3. Global Market Context section is present and substantive (not a
    placeholder). Content sourced from research cache.
 4. Impact Assessment section is present with position-level impact table
@@ -295,7 +307,8 @@ the output-template.md requirements:
 13. If comparison mode: Comparison Analysis and Decision Triggers present
 14. If prior analysis exists: Previous Analysis Delta section is present
 15. Escalation Flags section present (even if "No escalation flags triggered")
-16. Appendix: Full Position List is present and sorted by market value
+16. Appendix: Full Position List is present, includes off-platform positions,
+    and is sorted by market value
 
 If any check fails: fix the output before reporting completion.
 
