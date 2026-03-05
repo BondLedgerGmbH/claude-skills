@@ -171,18 +171,6 @@ of the analysis.
 
 ### Recommendations
 
-#### New Opportunity Overlap Assessment (if available)
-
-Before presenting recommendations, show which new opportunities from the
-Opportunity Landscape overlap with existing holdings. This contextualises
-the [OPPORTUNITY-SCORER] recommendations that follow.
-
-| Opportunity | Overlaps With | Overlap Type | Assessment |
-|-------------|---------------|--------------|------------|
-
-Where Assessment is: `PROCEED` (no meaningful overlap), `CAUTION`
-(partial overlap, justify adding), or `REDUNDANT` (skip).
-
 #### Recommendation Details
 
 Present each recommendation as a structured block with: source tag,
@@ -195,9 +183,18 @@ Where Source is: `[IMPACT-DRIVEN]` or `[OPPORTUNITY-SCORER]`
 For comparison mode, each recommendation also includes a Condition:
 "Both scenarios", "If Source A", or "If Source B"
 
-After all individual recommendation blocks, present a unified
-**Action Plan** that combines the summary table with deployment
-instructions for each recommendation in a single section:
+#### New Opportunity Overlap Assessment (if available)
+
+After presenting all recommendations and before the Action Plan, show
+which new opportunities from the Opportunity Landscape overlap with
+existing holdings. This contextualises the [OPPORTUNITY-SCORER]
+recommendations above and informs the action plan below.
+
+| Opportunity | Overlaps With | Overlap Type | Assessment |
+|-------------|---------------|--------------|------------|
+
+Where Assessment is: `PROCEED` (no meaningful overlap), `CAUTION`
+(partial overlap, justify adding), or `REDUNDANT` (skip).
 
 #### Action Plan
 

@@ -473,7 +473,8 @@ the output-template.md requirements:
    (assets/sectors most likely to underperform in current regime)
 7. Recommendations section contains:
    - New Opportunity Overlap Assessment table (if opportunity scoring
-     available) placed BEFORE individual recommendation blocks
+     available) placed AFTER individual recommendation blocks and
+     BEFORE the Action Plan
    - At least one recommendation (unless analysis genuinely finds no
      action needed, in which case state this explicitly)
    - Every recommendation has: source tag, action, ticker, account,
