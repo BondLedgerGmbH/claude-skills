@@ -247,9 +247,28 @@ Staged Deployment Plan sections. Do NOT create separate sections for these.
 ### Steelman Check
 For the top 3 recommendations, present the counter-case.
 
-### Stress Test Results
+### Stress Testing & Hedging
+
+Stress scenarios with integrated hedge strategies. Each scenario shows
+the portfolio impact AND the specific hedges to protect against it.
+Hedges must account for the recommended portfolio (current holdings +
+all recommendations applied), not just existing positions. This ensures
+hedges complement the growth recommendations above rather than
+conflicting with them.
+
+#### Volatility Regime Context
+- Current VIX level and classification (low/normal/elevated/high)
+- What this means for hedge cost-effectiveness
+- Source: `[LIVE]` (from hedge data) or `[ESTIMATED]` (WebSearch)
+
+#### Scenarios
+
 For each stress scenario (minimum 2):
-- Scenario name and description
+
+**Scenario N: [name]**
+
+*Impact:*
+- Description (2-3 sentences)
 - Trigger condition
 - Estimated portfolio drawdown (% of liquid NAV)
 - Position-level impact table:
@@ -263,23 +282,7 @@ Where Behaviour is: hedge / neutral / amplifies
 - Top 3 positions providing protection
 - Escalation flag triggered: yes/no
 
-### Hedge Playbook
-
-Concrete hedging strategies tied to each stress scenario, using live
-options data and inverse ETF pricing from the IB gateway (when available).
-
-#### Volatility Regime Context
-- Current VIX level and classification (low/normal/elevated/high)
-- What this means for hedge cost-effectiveness
-- Source: `[LIVE]` (from hedge data) or `[ESTIMATED]` (WebSearch)
-
-#### Per-Scenario Hedges
-
-For each stress scenario (matching the Stress Test Results section):
-
-**Scenario: [name]**
-
-Hedge recommendation table:
+*Hedge Strategy:*
 
 | # | Instrument | Type | Strike/Level | Expiry | Delta | Contracts/Shares | Notional (USD) | Size (% Liq NAV) | Cost (USD) | Ann. Cost (%) | Activation | Drawdown Offset (%) |
 |---|------------|------|-------------|--------|-------|------------------|----------------|-------------------|------------|---------------|------------|---------------------|
@@ -291,12 +294,19 @@ Where:
 
 Per-hedge rationale (2-3 sentences each):
 - What specific portfolio exposure this hedge protects
-- Why this instrument over alternatives
+- Why this instrument over alternatives (consider whether recommended
+  positions already provide natural hedging for this scenario)
 - What the hedge does NOT protect against (basis risk, limitations)
 
 Data source label per hedge: `[LIVE]` or `[ESTIMATED]`
 
+If a hedge instrument also provides protection for other scenarios,
+note this inline: "Also covers Scenario N: [brief explanation]."
+Each hedge is presented under the scenario it primarily targets.
+
 #### Hedge Portfolio Summary
+
+After all scenarios, provide a consolidated view:
 
 **Overlap analysis:** Which hedges provide overlapping protection across
 multiple scenarios. Group overlapping hedges.

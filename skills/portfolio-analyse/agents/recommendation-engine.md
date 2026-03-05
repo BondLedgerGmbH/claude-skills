@@ -211,168 +211,119 @@ For the top 3 recommendations:
 - Under what conditions would this be the wrong move?
 - What signal would invalidate the thesis behind it?
 
-### 3. Stress Testing
+### 3. Stress Testing & Hedging
 
-For the recommended portfolio (current holdings + all recommended changes
-applied):
+Stress scenarios with integrated hedge strategies. Each scenario shows
+the portfolio impact AND the specific hedges to protect against it.
+There is no separate Hedge Playbook section.
 
-**Define 2-3 stress scenarios** based on regime-shift risks from the
-market research synthesis (e.g., "regime shifts from Goldilocks to
-Stagflation", "USD collapses 15%", "oil spikes to $120 on Hormuz
-escalation", "AI capex freezes"). Each scenario should represent a
-plausible regime shift, not a generic "markets go down" scenario.
+**Important:** Stress test the recommended portfolio (current holdings +
+all recommended changes from Steps 1-1.5 applied). This ensures hedges
+complement the growth recommendations. For example, if you recommended
+adding gold exposure (IGLN), account for that position when assessing
+a stagflation scenario and designing its hedges.
 
-For each scenario:
-- Scenario name and description (2-3 sentences)
-- Trigger: what would cause this scenario
-- Estimated portfolio drawdown (% of liquid NAV). Use sector/asset class
-  historical drawdowns from comparable regime transitions (from the
-  opportunity-scorer's historical comparables) where available. State
-  methodology and confidence.
-- Position-level impact table:
-
-| Position | Account | Current Weight (%) | Estimated Drawdown (%) | Contribution to Portfolio Loss (%) | Behaviour |
-
-Where Behaviour is: **hedge** (reduces portfolio loss) / **neutral** /
-**amplifies** (increases portfolio loss)
-
-- Top 3 positions contributing most to portfolio loss
-- Top 3 positions providing most protection
-- Maximum correlated-cluster loss
-
-**Escalation threshold check:**
-- If any single scenario produces an estimated portfolio drawdown >25%:
-  flag for escalation (see Escalation Flags section)
-- If any single position contributes >5% of total portfolio loss in
-  any scenario: flag for escalation
-
-### 3.5. Hedge Playbook
-
-For each stress scenario defined in Step 3, design a concrete hedge
-strategy using the hedge data from the orchestrator (hedge-data JSON).
-The Hedge Playbook bridges the gap between "this scenario hurts" (stress
-test) and "here is exactly how to protect against it" (actionable hedge).
-
-**3.5.1: Volatility Regime Context**
+**3.1: Volatility Regime Context**
 
 Read the VIX level from the hedge data (or fetch via WebSearch if absent).
 Classify the current vol regime:
-- VIX < 15: Low vol. Hedges are cheap. Favorable time to establish
-  protection. Note this explicitly.
+- VIX < 15: Low vol. Hedges are cheap. Note this explicitly.
 - VIX 15-20: Normal vol. Standard hedge pricing.
-- VIX 20-30: Elevated vol. Hedges are expensive. Consider inverse ETFs
-  or collar strategies to reduce cost. Note the premium.
-- VIX > 30: High vol / crisis. Hedges are very expensive. Consider
-  whether protection is still worth the cost or if the move has
-  already happened.
+- VIX 20-30: Elevated vol. Hedges expensive. Consider inverse ETFs
+  or collar strategies to reduce cost.
+- VIX > 30: High vol / crisis. Consider whether protection is still
+  worth the cost or if the move has already happened.
 
 State the VIX level, the regime classification, and what this means
 for hedge cost-effectiveness.
 
-**3.5.2: Per-Scenario Hedge Design**
+**3.2: Define and hedge 2-3 stress scenarios**
 
-For each stress scenario from Step 3:
+Each scenario should represent a plausible regime shift, not a generic
+"markets go down" scenario. Base them on regime-shift risks from the
+market research synthesis.
+
+For each scenario, produce both impact analysis and hedge strategy
+as a single block:
+
+**Impact analysis per scenario:**
+- Scenario name and description (2-3 sentences)
+- Trigger: what would cause this scenario
+- Estimated portfolio drawdown (% of liquid NAV). Use historical
+  drawdowns from comparable regime transitions where available.
+- Position-level impact table:
+
+| Position | Account | Current Weight (%) | Estimated Drawdown (%) | Contribution to Portfolio Loss (%) | Behaviour |
+
+Where Behaviour is: **hedge** / **neutral** / **amplifies**
+
+- Top 3 positions contributing most to portfolio loss
+- Top 3 positions providing most protection
+- Escalation flag check: drawdown >25% or single position >5% loss
+
+**Hedge strategy per scenario** (immediately after the impact table):
+
+Design a concrete hedge using the hedge data from the orchestrator.
 
 1. **Identify hedgeable exposure.** Which positions and clusters drive
-   the loss in this scenario? What is the total exposure at risk (in
-   USD and % of liquid NAV)?
+   the loss? Total exposure at risk (USD and % of liquid NAV)?
 
-2. **Select the best-fit instrument.** From the hedge data, find the
-   instrument that most directly offsets the identified risk. Prefer:
+2. **Select instrument.** From the hedge data, find the best-fit:
    - Put options on the most correlated ETF/index for targeted hedges
    - Inverse ETFs for longer-duration or cost-sensitive hedges
    - Safe haven assets (GLD, TLT) for broad macro hedges
    - Collar strategies (sell calls to fund puts) when vol is elevated
 
 3. **Select strike and expiry.** For put options:
-   - Strike: choose a strike near the scenario's expected drawdown level.
-     For example, if the scenario estimates a 15% drawdown in SPY, select
-     a put strike ~10-15% OTM (provides protection for most of the move).
-   - Expiry: match to the scenario's time horizon. Near-term scenarios
-     (1-3 months) use near-term options. Structural risks use 3-6 month
-     options. Use the 3 expiry tenors available in the hedge data.
-   - Target delta: -0.20 to -0.35 for cost-efficient downside protection.
+   - Strike near the scenario's expected drawdown level (~10-15% OTM)
+   - Expiry matched to scenario time horizon (use the 3 tenors in data)
+   - Target delta: -0.20 to -0.35
 
-4. **Calculate hedge size.** The hedge should offset a meaningful portion
-   of the scenario's projected loss:
-   - Determine the dollar exposure at risk from the stress test
-   - Calculate the number of contracts needed: exposure_at_risk / (100 * delta * underlying_price)
-   - Convert to % of liquid NAV: (contracts * option_mid * 100) / liquid_nav
-   - Size the hedge to offset 50-80% of the scenario drawdown (full
-     hedging is rarely cost-efficient)
+4. **Calculate hedge size.** Offset 50-80% of the scenario drawdown:
+   - contracts = exposure_at_risk / (100 * delta * underlying_price)
+   - size_pct = (contracts * option_mid * 100) / liquid_nav
 
 5. **Calculate annualized cost.**
-   - For options: annualized_cost = (option_mid / underlying_price) * (365 / days_to_expiry) * 100
-     This is the annualized premium as a % of the underlying value.
-     Also calculate absolute cost: contracts * option_mid * 100.
-   - For inverse ETFs: annualized_cost = expense_ratio + estimated_tracking_error.
-     Tracking error estimate: |leverage| * 0.5% per year for 1x, scale
-     proportionally for leveraged. Note: leveraged inverse ETFs suffer
-     from daily rebalancing decay and are suitable only for short-term
-     hedges (weeks, not months).
-   - For collars: net cost = put_premium - call_premium. Can be zero-cost
-     if strikes are chosen appropriately.
+   - Options: (option_mid / underlying_price) * (365 / days_to_expiry) * 100
+   - Inverse ETFs: expense_ratio + tracking_error estimate
+   - Collars: net cost = put_premium - call_premium
 
 6. **Determine activation mode.**
-   - "Carry as insurance": deploy immediately, accept the carry cost as
-     ongoing portfolio insurance. Appropriate when the scenario is a
-     persistent structural risk.
-   - "Deploy on trigger": specify the exact trigger condition (e.g.,
-     "if VIX breaks 25", "if SPY drops below 550", "if 10Y yield
-     exceeds 5%"). Appropriate when the scenario has a clear early
-     warning signal. Note: waiting for the trigger means hedges will
-     be more expensive when you need them.
-   - "Scale in": deploy a partial position now, add on trigger.
+   - "Carry as insurance" / "Deploy on trigger: [condition]" / "Scale in"
 
-7. **Write the rationale.** For each hedge, explain in 2-3 sentences:
-   - What specific portfolio exposure this hedge protects
-   - Why this instrument was chosen over alternatives
-   - What the hedge does NOT protect against (basis risk, gap risk,
-     correlation breakdown)
+7. **Rationale** per hedge (2-3 sentences): what it protects, why this
+   instrument over alternatives, what it does NOT protect against.
+   Consider whether recommended positions (from Step 1) already provide
+   natural hedging for this scenario before adding paid hedges.
 
-Output for each scenario - the hedge recommendation table:
+Hedge recommendation table per scenario:
 
-| # | Instrument | Type | Strike/Level | Expiry | Delta | Contracts/Shares | Notional (USD) | Size (% Liq NAV) | Cost (USD) | Annualized Cost (%) | Activation | Drawdown Offset (%) |
-|---|------------|------|-------------|--------|-------|------------------|----------------|-------------------|------------|---------------------|------------|---------------------|
+| # | Instrument | Type | Strike/Level | Expiry | Delta | Contracts/Shares | Notional (USD) | Size (% Liq NAV) | Cost (USD) | Ann. Cost (%) | Activation | Drawdown Offset (%) |
 
-Where:
-- Type: put option / inverse ETF / call option / collar / safe haven
-- Delta: option delta (N/A for ETFs)
-- Contracts/Shares: number of option contracts (x100) or ETF shares
-- Drawdown Offset: what % of the scenario's total portfolio drawdown
-  this hedge offsets
+Data source label per hedge: `[LIVE]` or `[ESTIMATED]`
 
-Below the table, include:
-- **Rationale**: per-hedge explanation (why this hedge, what it protects,
-  what it doesn't protect)
-- **Data source**: `[LIVE]` if from hedge-data JSON with actual
-  bid/ask/greeks, `[ESTIMATED]` if using directional estimates
+If a hedge instrument provides protection across multiple scenarios,
+note this: "Also covers Scenario N" with a brief explanation.
 
-**3.5.3: Hedge Portfolio Summary**
+**3.3: Hedge Portfolio Summary**
 
-After all per-scenario hedge tables, produce a summary section:
+After all scenarios, produce a consolidated view:
 
-**Overlap analysis:** Identify hedges that provide overlapping protection
-across multiple scenarios. For example, SPY puts protect against both a
-broad market correction and a tech-specific drawdown (partially). Group
-overlapping hedges and note which scenarios each covers.
+**Overlap analysis:** Which hedges cover multiple scenarios. Group them.
 
-**Consolidated hedge portfolio:** If the investor were to implement ALL
-recommended hedges, what is the:
+**Consolidated hedge portfolio:**
 - Total annual carry cost (USD and % of liquid NAV)
 - Total notional protection
 - Overlap-adjusted cost (removing redundant hedges)
 
-**Cost-efficiency ranking:** Rank all recommended hedges by cost per
-unit of drawdown protection: annualized_cost / drawdown_offset. Lower
-is better. This helps the investor prioritize if they want to implement
-only a subset.
+**Cost-efficiency ranking:**
 
-**Minimum viable hedge:** If the investor wants the single most
-cost-efficient hedge that provides the broadest protection, which one
-is it? State the instrument, cost, and what it covers.
+| Rank | Instrument | Ann. Cost (%) | Drawdown Offset (%) | Cost per 1% Protection | Scenarios Covered |
 
-**3.5.4: Fallback when hedge data is unavailable**
+**Minimum viable hedge:** The single most cost-efficient hedge providing
+the broadest protection. State instrument, cost, and coverage.
+
+**3.4: Fallback when hedge data is unavailable**
 
 If the hedge-data JSON was not provided or is empty:
 - State: "Live options data unavailable. Hedge recommendations use
@@ -383,8 +334,6 @@ If the hedge-data JSON was not provided or is empty:
   OTM put cost: scale by delta/0.50
 - For inverse ETFs: use known expense ratios from the static table
 - Mark all cost figures as `[ESTIMATED]`
-- Recommend specific instruments and strategies but note that exact
-  pricing should be verified before execution
 
 ### 4. Action Plan
 
@@ -546,13 +495,14 @@ the output-template.md requirements:
     No separate "Staged Deployment Plan" section. Immediate-execution
     recommendations grouped in one line.
 10. Steelman Check is present for top 3 recommendations
-11. Stress Testing section present with at least 2 scenarios, each with
-    position-level impact table
-12. Hedge Playbook section present with: vol regime context, per-scenario
-    hedge tables (instrument, type, strike, expiry, delta, size, cost,
-    activation, drawdown offset), per-hedge rationale, hedge portfolio
-    summary (overlap analysis, consolidated cost, cost-efficiency ranking,
-    minimum viable hedge). Data source labels on all cost figures.
+11. Stress Testing & Hedging section present with: vol regime context,
+    at least 2 scenarios, each with BOTH position-level impact table AND
+    integrated hedge strategy (hedge table, rationale, data source labels).
+    No separate "Hedge Playbook" section exists. Hedges reference the
+    recommended portfolio (current + all recommendations applied).
+12. Hedge Portfolio Summary present after all scenarios with: overlap
+    analysis, consolidated cost, cost-efficiency ranking, minimum viable
+    hedge. Cross-scenario hedge coverage noted inline per hedge.
 13. Watchlist contains specific items with trigger conditions
 14. Monitoring Framework present with all three tiers (monthly macro,
     weekly position, regime shift signals)
