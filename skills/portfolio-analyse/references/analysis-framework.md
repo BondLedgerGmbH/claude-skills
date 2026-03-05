@@ -74,10 +74,35 @@ cap maximum conviction at Medium.
   JSON contains both IB and off-platform positions in a single `positions`
   array. Off-platform positions have `account: "off_platform"` and
   `source: "manual"`. Real estate positions have `liquidity: "illiquid"`.
-- Allocation by: asset class, sector, geography, currency denomination.
-  Use `combined.liquid_nav` as the denominator for all percentage calculations.
-  Off-platform asset classes include COMMODITY (precious metals), CRYPTO,
-  OPT (private equity options), and REAL_ESTATE.
+
+**Asset class taxonomy.** Every position must be classified into one of
+these standard asset classes and sub-classes:
+
+| Asset Class | Sub-classes | What maps here |
+|-------------|-------------|----------------|
+| Equities | Single stocks, Equity ETFs | Individual shares (AMZN, MSFT, ...), equity ETFs (VYM, VEA, VWO, VB, VIGI, LIT, TAN, ...) |
+| Fixed Income | Treasuries, Bond ETFs | T-bill ETFs (SGOV), bond ETFs, any future bond holdings |
+| Cash & Cash Equivalents | Money market funds, Uninvested cash | Money market ETFs (XEON, CSH2), uninvested cash balances from `balances.{account}.cash` |
+| Commodities | Physical gold, Physical silver | Off-platform precious metals |
+| Cryptocurrency | BTC, other | Off-platform crypto holdings |
+| Private Equity | Stock options | Off-platform private equity (private equity options, etc.) |
+| Real Estate *(illiquid)* | Primary residence, Investment property | Off-platform real estate |
+
+**Cash & Cash Equivalents**: this class equals the sum of uninvested cash
+balances from the portfolio JSON (`balances.{account}.cash` for each account)
+plus money market fund positions (XEON, CSH2, or similar). Do not derive
+cash by subtracting positions from NAV. Use the values directly from the JSON.
+
+**Dual denominator.** All allocation tables show two percentage columns:
+- `% Liquid NAV` = value / `combined.liquid_nav`. Used for investment
+  recommendations and position sizing. Real estate shows "--" (excluded).
+- `% Total NAV` = value / `combined.total_wealth`. Used for wealth overview.
+  All asset classes included.
+
+Allocation tables use the hierarchical format defined in output-template.md:
+parent rows (bold, showing sub-class sums) and indented sub-class rows.
+
+- Allocation by: asset class (hierarchical), sector, geography, currency.
 - Per-account breakdown (for tax-aware recommendations): include off_platform
   as a separate account alongside IB accounts.
 - Concentration flags: pre-computed in the JSON on the full portfolio
@@ -101,7 +126,7 @@ cap maximum conviction at Medium.
 - Flag indirect exposures (e.g., ETFs with heavy NVDA weighting,
   cloud providers dependent on AI capex)
 - Assess USD concentration across all holdings including off-platform
-  (precious metals quoted in USD, Bitcoin in USD, private equity options in USD)
+  (precious metals quoted in USD, Bitcoin in USD, private equity in USD)
 
 ### 2.5. New Opportunity Overlap Assessment
 For each opportunity from the opportunity-scorer, check against existing
@@ -123,7 +148,7 @@ For each relevant position or cluster:
 ### 4. Currency Exposure Analysis
 - Total USD exposure (direct + indirect). Off-platform assets are
   USD-denominated in the portfolio JSON (precious metals and crypto
-  are globally priced in USD, private equity options are USD-denominated). Include them
+  are globally priced in USD, private equity is a US company). Include them
   in USD totals. Real estate is in local currency (CHF).
 - CHF, EUR, and other currency exposures
 - Recommended target allocation aligned with USD thesis

@@ -281,8 +281,11 @@ the output-template.md requirements:
 1. Header section is present with: date, mode, research freshness, IB NAV,
    liquid NAV, total wealth, position count, regime classification, data
    quality status, spot prices used for off-platform valuations
-2. Portfolio Snapshot contains allocation tables (including off-platform
-   asset classes), off-platform holdings detail table, and concentration flags
+2. Portfolio Snapshot contains hierarchical asset class allocation table
+   (parent rows with sub-class rows per output-template.md) with both
+   % Liquid NAV and % Total NAV columns, and concentration flags.
+   Cash & Cash Equivalents row equals uninvested cash + money market funds.
+   No separate off-platform holdings table (all integrated into allocation).
 3. Global Market Context section is present and substantive (not a
    placeholder). Content sourced from research cache.
 4. Impact Assessment section is present with position-level impact table
