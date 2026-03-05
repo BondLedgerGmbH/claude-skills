@@ -54,12 +54,13 @@ OUTPUT_DIR/
 ├── 1-market-research/         ← market-research-cache-{timestamp}.md
 ├── 2-opportunity-scoring/     ← opportunity-scoring-{timestamp}.md
 ├── 3-impact-analysis/         ← impact-analysis-{timestamp}.md
+├── 3-hedge-data/              ← hedge-data-{timestamp}.json
 └── 4-portfolio-analysis/      ← portfolio-analysis-{timestamp}.md (final output)
 ```
 
 ## Dependencies
 
-- MCP server `ib-connect` must be configured and available (provides `ib_status`, `ib_start_gateway`, `ib_portfolio_summary` tools)
+- MCP server `ib-connect` must be configured and available (provides `ib_status`, `ib_start_gateway`, `ib_portfolio_summary`, `ib_option_chain`, `ib_market_snapshot` tools)
 - `yt-transcript` skill must be installed for YouTube mode and comparison mode with YouTube URLs
 - Four custom subagents in `.claude/agents/`: `market-researcher.md`, `opportunity-scorer.md`, `impact-analyst.md`, `recommendation-engine.md`
 
@@ -69,7 +70,8 @@ OUTPUT_DIR/
 
 Create `OUTPUT_DIR` and all subdirectories if they do not exist:
 `0-portfolio-snapshots/`, `0-thesis-inputs/`, `1-market-research/`,
-`2-opportunity-scoring/`, `3-impact-analysis/`, `4-portfolio-analysis/`.
+`2-opportunity-scoring/`, `3-impact-analysis/`, `3-hedge-data/`,
+`4-portfolio-analysis/`.
 
 ### Step 2: Pull portfolio data
 
@@ -143,7 +145,7 @@ After obtaining the IB portfolio snapshot (fresh or cached), merge off-platform 
    - `REAL_ESTATE_PRIMARY`: asset_class `REAL_ESTATE`, sector `Real Estate`, liquidity `illiquid`
    - `REAL_ESTATE_INVESTMENT`: asset_class `REAL_ESTATE`, sector `Real Estate`, liquidity `illiquid`
 
-   For real estate: use the values from investor-context.md directly (no spot price needed). Tax treatment for real estate: `no_capital_gains_tax` (per local tax treatment in investor-context.md).
+   For real estate: use the values from investor-context.md directly (no spot price needed). Tax treatment for real estate: per investor-context.md (local private real estate rules).
 
 4. **Add `off_platform` entry to `balances`:**
    ```json
@@ -334,6 +336,129 @@ After completion:
 - Verify the output file exists and is non-empty
 - If subagent failed or output missing: abort pipeline. Report which stage failed. Note that research cache and opportunity scoring are preserved for retry.
 
+### Step 7.5: Fetch Hedging Market Data
+
+After the impact-analyst completes and before dispatching the recommendation-engine, fetch live options and market data for hedging instruments. This data enables the recommendation-engine to build a precise Hedge Playbook with real pricing.
+
+**7.5.1: Determine the hedging universe**
+
+Read the impact analysis output file (from Step 7). Parse the Risk Assessment and Correlation and Cluster Analysis sections. Identify:
+- The top 3-5 risk factors (from the five risk dimensions)
+- Concentrated sectors and correlation clusters
+- Key directional exposures (USD, rates, specific sectors)
+
+Use the mapping table below to select which instruments need option chain and market data:
+
+| Risk / Exposure | Put Chain Candidates | Inverse ETF Snapshots | Safe Haven Snapshots |
+|---|---|---|---|
+| Broad US equity | SPY, QQQ | SH, SQQQ | GLD, TLT |
+| Technology / AI | XLK, QQQ | SQQQ | - |
+| Semiconductors | SMH, SOXX | SOXS | - |
+| Energy | XLE | ERY | - |
+| Emerging markets | EEM, VWO | EUM | - |
+| USD depreciation | UUP | - | FXE, GLD |
+| Interest rate rise | TLT | TBT | SGOV |
+| Small cap | IWM | RWM | - |
+
+**Always fetch:** SPY put chain (broad market hedge) and VIX snapshot (vol regime context).
+**Select additional instruments** based on the actual risk profile from the impact analysis. Aim for 3-6 option chains total (not all rows above). Only fetch instruments relevant to the portfolio's identified risks.
+
+**7.5.2: Select expiry months**
+
+For each put chain candidate, fetch 3 expiry tenors:
+- **Near-term:** ~1 month out from today
+- **Medium-term:** ~3 months out
+- **Far-term:** ~6 months out
+
+Convert these to YYYYMM format. If a specific month is not available (check the `option_months` returned by the conid search), use the nearest available month.
+
+**7.5.3: Fetch option chains**
+
+For each selected underlying and expiry month, call `ib_option_chain`:
+```
+ib_option_chain(
+  underlying=<symbol>,
+  expiry_month=<YYYYMM>,
+  right="P",          # puts for downside hedges
+  strike_range_pct=20  # strikes within 20% of current price
+)
+```
+
+For safe haven calls (GLD, TLT, FXE): use `right="C"`.
+
+Make calls sequentially (each call involves multiple IB API requests internally). Log progress.
+
+**7.5.4: Fetch market snapshots**
+
+Call `ib_market_snapshot` with all relevant inverse ETFs and context symbols in a single batch:
+```
+ib_market_snapshot(
+  symbols=["VIX", <selected inverse ETFs>, <selected safe havens>]
+)
+```
+
+**7.5.5: Assemble and save hedge data**
+
+Combine all fetched data into a single JSON structure:
+
+```json
+{
+  "fetch_timestamp": "<ISO timestamp>",
+  "risk_factors_identified": ["<top risks from impact analysis>"],
+  "vix": {"price": <float>, "context": "<low/normal/elevated/high based on level>"},
+  "option_chains": {
+    "<SYMBOL>_<YYYYMM>_<P|C>": {
+      "underlying": "<symbol>",
+      "underlying_price": <float>,
+      "expiry_month": "<YYYYMM>",
+      "right": "<P|C>",
+      "options": [
+        {"strike": <float>, "bid": <float>, "ask": <float>, "mid": <float>,
+         "implied_vol": <float>, "delta": <float>, "theta": <float>,
+         "gamma": <float>, "vega": <float>, "volume": <float>,
+         "open_interest": <float>}
+      ]
+    }
+  },
+  "inverse_etfs": {
+    "<SYMBOL>": {
+      "price": <float>, "volume": <float>,
+      "expense_ratio": <float>, "leverage": <int>,
+      "tracked_index": "<string>"
+    }
+  },
+  "safe_havens": {
+    "<SYMBOL>": {"price": <float>, "volume": <float>}
+  },
+  "data_quality": {
+    "chains_requested": <int>,
+    "chains_with_data": <int>,
+    "chains_empty": ["<symbols with no data>"],
+    "snapshot_symbols_resolved": <int>,
+    "snapshot_symbols_failed": ["<symbols that failed>"]
+  }
+}
+```
+
+VIX context thresholds: <15 = "low", 15-20 = "normal", 20-30 = "elevated", >30 = "high".
+
+**IB Client Portal Gateway data limitations (apply to both option chains and market snapshots):**
+
+- **`implied_vol` is reported as a negative number** by the CP Gateway API. Take `abs(implied_vol)` before storing in the hedge-data JSON. A value of -0.221 means IV = 22.1%.
+- **`theta` and `vega` are always null.** The CP Gateway snapshot endpoint does not return these greeks. Omit them from the hedge-data JSON or set to null. The recommendation-engine must not rely on theta/vega from this data; it should estimate theta from time decay if needed.
+- **`open_interest` is always null.** The snapshot endpoint does not provide open interest data. Omit or set to null.
+
+When assembling the hedge-data JSON, apply the `abs()` fix to `implied_vol` values. Leave null fields as null rather than inventing values.
+
+Save to `OUTPUT_DIR/3-hedge-data/hedge-data-{YYYY-MM-DD-HH-MM-SS}.json` with `chmod 600`.
+
+**7.5.6: Error handling**
+
+- If IB gateway is not authenticated: skip Step 7.5 entirely. Set `hedge_data_path` to null. Log: "Hedge data unavailable: gateway not authenticated. Hedge Playbook will use estimated data." The recommendation-engine will fall back to WebSearch-based estimates.
+- If individual option chains fail: continue with available data. Note failures in `data_quality`.
+- If VIX snapshot fails: note in data_quality, recommendation-engine will fetch via WebSearch.
+- If all option chains fail: save the JSON with empty `option_chains`. The recommendation-engine's Hedge Playbook will note "live options data unavailable" and use directional estimates.
+
 ### Step 8: Dispatch Subagent 4 - Recommendation Engine
 
 Generate the output file path: `OUTPUT_DIR/4-portfolio-analysis/portfolio-analysis-{YYYY-MM-DD-HH-MM-SS}.md`
@@ -351,6 +476,7 @@ Prompt the subagent with:
 - Path to impact analysis file
 - Path to market research cache file
 - Path to opportunity scoring file (from Step 5.6, or note that it is unavailable)
+- Path to hedge data file (from Step 7.5, or note that it is unavailable)
 - Path to the portfolio summary file (from Step 2)
 - Path to investor-context.md (`SKILL_DIR/references/investor-context.md`)
 - Path to output-template.md (`SKILL_DIR/references/output-template.md`)
@@ -420,6 +546,7 @@ The chat summary is not a replacement for the full report. It exists so the user
 Delete old intermediate files from `OUTPUT_DIR` subdirectories:
 - `0-thesis-inputs/thesis-input-*.md` files older than `INTERMEDIATE_FILE_MAX_AGE_DAYS` (7 days)
 - `3-impact-analysis/impact-analysis-*.md` files older than `INTERMEDIATE_FILE_MAX_AGE_DAYS` (7 days)
+- `3-hedge-data/hedge-data-*.json` files older than `INTERMEDIATE_FILE_MAX_AGE_DAYS` (7 days)
 - `2-opportunity-scoring/opportunity-scoring-*.md` files older than `INTERMEDIATE_FILE_MAX_AGE_DAYS` (7 days)
 - `0-portfolio-snapshots/portfolio-summary-*.json` files older than `INTERMEDIATE_FILE_MAX_AGE_DAYS` (7 days)
 - Research cache files are cleaned in Step 4 (24-hour policy)
@@ -445,6 +572,9 @@ Keep the most recent set of each for debugging.
 | Research cache expired | Dispatch fresh research (normal flow) |
 | Data quality LOW-CONFIDENCE | Continue with warning, downstream agents cap conviction |
 | Escalation flags triggered | Re-run upstream stage once, then proceed regardless |
+| Hedge data fetch fails (gateway) | Skip Step 7.5, set hedge_data_path to null, continue pipeline |
+| Hedge data fetch fails (partial) | Save partial data, note failures in data_quality field |
+| Option chain returns no data | Include in hedge-data JSON with empty options, note in data_quality |
 | investor-context.md missing | Stop. Tell user to create the file. |
 | investor-context.md stale (90+ days) | Warn in chat summary, continue with analysis |
 

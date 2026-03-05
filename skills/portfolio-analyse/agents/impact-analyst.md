@@ -118,37 +118,6 @@ Where Assessment is one of:
 - `REDUNDANT`: substantially duplicates existing exposure; recommend
   skip unless the recommendation-engine provides explicit justification
 
-### 2.5. New Opportunity Overlap Assessment
-
-Skip this step if no opportunity scoring report was provided.
-
-For each opportunity in the opportunity-scorer's table, check against
-the current portfolio:
-
-1. **Direct overlap**: Does this opportunity share a ticker with an
-   existing holding? (e.g., recommending to add AMZN when AMZN is
-   already held in the corporate account)
-2. **Sector/theme overlap**: Does this opportunity fall in the same
-   sector or thesis cluster as existing holdings? Would it increase
-   concentration in an already-heavy sector?
-3. **Correlation cluster overlap**: Using the clusters identified in
-   Step 2, would adding this opportunity increase the size of an
-   existing correlated cluster?
-4. **Standing thesis alignment**: Does the opportunity align with or
-   contradict the investor's standing theses from investor-context.md?
-
-Output an overlap assessment table:
-
-| Opportunity | Overlaps With | Overlap Type | Cluster Impact | Assessment |
-|-------------|---------------|--------------|----------------|------------|
-
-Where Assessment is one of:
-- `PROCEED`: no meaningful overlap with existing portfolio
-- `CAUTION`: partial overlap exists; note which holdings overlap and
-  the resulting combined exposure if added
-- `REDUNDANT`: substantially duplicates existing exposure; recommend
-  skip unless the recommendation-engine provides explicit justification
-
 ### 3. Thesis/Event Impact Assessment
 For each relevant position or cluster:
 - Direct impact: is this position directly affected?

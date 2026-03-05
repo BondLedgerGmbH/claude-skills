@@ -9,6 +9,39 @@
 
 # Output Template
 
+## Abbreviation and Label Footnotes
+
+Every table and paragraph that introduces an abbreviation, acronym, or
+bracket label for the first time in the document must include a footnote
+immediately below it defining all new terms used. The footnote block
+uses a compact format:
+
+```
+> **Footnotes:** DM = Developed Markets; EM = Emerging Markets;
+> [GEO] = Geopolitical tradeable expression; HY = High Yield.
+```
+
+Rules:
+- Only define each term once (on first appearance). Do not repeat the
+  footnote in subsequent sections.
+- Group all new terms from a single table or paragraph into one footnote
+  block placed directly below that table or paragraph.
+- Cover ALL types of shorthand: bracket labels (e.g. `[GEO]`, `[RV]`,
+  `[INTEL]`, `[USD_DET]`, `[FACT]`, `[INFERENCE]`, `[LIVE]`,
+  `[ESTIMATED]`, `[IMPACT-DRIVEN]`, `[OPPORTUNITY-SCORER]`),
+  financial acronyms (e.g. DM, EM, HY, IG, NAV, CAPE, DXY, OTM, ATM,
+  IV, ETC, ETF, REIT, ISM, PMI, CPI, PPI, PCE, HICP, NFP, SLOOS,
+  FMS, YTD, YoY, MoM, FMV, FX, EMBI, C&I, IRA), and any other
+  abbreviation a reader unfamiliar with finance would not immediately
+  understand.
+- Well-known company tickers (MSFT, AAPL) and instrument tickers
+  (SPY, QQQ) do NOT need footnotes. Account names do not need
+  footnotes. Standard units (USD, EUR, CHF, oz,
+  BTC) do not need footnotes.
+- Thesis-derived bracket labels (e.g. `[INTEL]`, `[USD_DET]`,
+  `[AI_BUBBLE]`) must be footnoted with the full thesis name from
+  investor-context.md on first use.
+
 ## Required Sections
 
 ### Header
@@ -61,7 +94,7 @@ JSON plus money market fund positions. Do not derive cash by subtraction.
 | **Cryptocurrency** | | | |
 |   BTC | | | |
 | **Private Equity** | | | |
-|   Stock options | | | |
+|   Stock options (e.g. [COMPANY_NAME]) | | | |
 | **Real Estate** *(illiquid)* | | | |
 |   Primary residence | | | |
 |   Investment property | | | |
@@ -215,6 +248,57 @@ Where Behaviour is: hedge / neutral / amplifies
 - Top 3 contributors to loss
 - Top 3 positions providing protection
 - Escalation flag triggered: yes/no
+
+### Hedge Playbook
+
+Concrete hedging strategies tied to each stress scenario, using live
+options data and inverse ETF pricing from the IB gateway (when available).
+
+#### Volatility Regime Context
+- Current VIX level and classification (low/normal/elevated/high)
+- What this means for hedge cost-effectiveness
+- Source: `[LIVE]` (from hedge data) or `[ESTIMATED]` (WebSearch)
+
+#### Per-Scenario Hedges
+
+For each stress scenario (matching the Stress Test Results section):
+
+**Scenario: [name]**
+
+Hedge recommendation table:
+
+| # | Instrument | Type | Strike/Level | Expiry | Delta | Contracts/Shares | Notional (USD) | Size (% Liq NAV) | Cost (USD) | Ann. Cost (%) | Activation | Drawdown Offset (%) |
+|---|------------|------|-------------|--------|-------|------------------|----------------|-------------------|------------|---------------|------------|---------------------|
+
+Where:
+- Type: put option / inverse ETF / call option / collar / safe haven
+- Activation: "carry as insurance" / "deploy on trigger: [condition]" / "scale in"
+- Drawdown Offset: % of scenario's total portfolio drawdown this hedge offsets
+
+Per-hedge rationale (2-3 sentences each):
+- What specific portfolio exposure this hedge protects
+- Why this instrument over alternatives
+- What the hedge does NOT protect against (basis risk, limitations)
+
+Data source label per hedge: `[LIVE]` or `[ESTIMATED]`
+
+#### Hedge Portfolio Summary
+
+**Overlap analysis:** Which hedges provide overlapping protection across
+multiple scenarios. Group overlapping hedges.
+
+**Consolidated hedge portfolio:**
+- Total annual carry cost (USD and % of liquid NAV)
+- Total notional protection
+- Overlap-adjusted cost (removing redundant hedges)
+
+**Cost-efficiency ranking:**
+
+| Rank | Instrument | Ann. Cost (%) | Drawdown Offset (%) | Cost per 1% Protection | Scenarios Covered |
+|------|------------|---------------|---------------------|----------------------|-------------------|
+
+**Minimum viable hedge:** The single most cost-efficient hedge providing
+the broadest protection. State instrument, cost, and coverage.
 
 ### Staged Deployment Plan
 For each ADD/REBALANCE recommendation above 1% liquid NAV:

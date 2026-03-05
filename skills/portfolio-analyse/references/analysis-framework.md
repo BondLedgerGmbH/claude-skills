@@ -8,7 +8,7 @@
      - Step 0:   market-researcher
      - Step 0.5: opportunity-scorer
      - Steps 1-5: impact-analyst
-     - Steps 6-12: recommendation-engine -->
+     - Steps 6-13: recommendation-engine (incl. 8.5 Hedge Playbook) -->
 
 # Analysis Framework
 
@@ -47,7 +47,7 @@ a calculated position size:
 
 - **Liquid NAV:** Pre-computed in the portfolio-summary JSON as
   `combined.liquid_nav`. This includes IB NAV + off-platform liquid assets
-  (precious metals at spot, crypto at spot, private equity options at FMV).
+  (precious metals at spot, crypto at spot, [COMPANY_NAME] options at FMV).
   Real estate is excluded (illiquid). Use this value directly; do not
   calculate manually from investor-context.md.
 
@@ -85,7 +85,7 @@ these standard asset classes and sub-classes:
 | Cash & Cash Equivalents | Money market funds, Uninvested cash | Money market ETFs (XEON, CSH2), uninvested cash balances from `balances.{account}.cash` |
 | Commodities | Physical gold, Physical silver | Off-platform precious metals |
 | Cryptocurrency | BTC, other | Off-platform crypto holdings |
-| Private Equity | Stock options | Off-platform private equity (private equity options, etc.) |
+| Private Equity | Stock options | Off-platform private equity ([COMPANY_NAME] options, etc.) |
 | Real Estate *(illiquid)* | Primary residence, Investment property | Off-platform real estate |
 
 **Cash & Cash Equivalents**: this class equals the sum of uninvested cash
@@ -129,11 +129,11 @@ allocation table. The sum of each table must equal the portfolio total.
     real yields and risk appetite)
   - Bitcoin forms a crypto/volatility cluster (correlated with risk
     appetite and liquidity conditions, partially correlated with tech)
-  - private equity options have fintech/crypto sector correlation
+  - [COMPANY_NAME] options have fintech/crypto sector correlation
 - Flag indirect exposures (e.g., ETFs with heavy NVDA weighting,
   cloud providers dependent on AI capex)
 - Assess USD concentration across all holdings including off-platform
-  (precious metals quoted in USD, Bitcoin in USD, private equity in USD)
+  (precious metals quoted in USD, Bitcoin in USD, [COMPANY_NAME] in USD)
 
 ### 2.5. New Opportunity Overlap Assessment
 For each opportunity from the opportunity-scorer, check against existing
@@ -155,7 +155,7 @@ For each relevant position or cluster:
 ### 4. Currency Exposure Analysis
 - Total USD exposure (direct + indirect). Off-platform assets are
   USD-denominated in the portfolio JSON (precious metals and crypto
-  are globally priced in USD, private equity is a US company). Include them
+  are globally priced in USD, [COMPANY_NAME] is a US company). Include them
   in USD totals. Real estate is in local currency (CHF).
 - CHF, EUR, and other currency exposures
 - Recommended target allocation aligned with USD thesis
@@ -190,7 +190,7 @@ For each recommendation:
 - Tax note:
   - Personal account: no capital gains tax; flag dividend withholding if relevant
   - Corporate account: corporate tax impact; participation exemption eligibility
-  - Off-platform: apply personal tax treatment (local tax rules per investor-context.md)
+  - Off-platform: apply personal tax treatment (local private investor rules)
     unless the asset is held in a corporate structure
 - Tradeoff: what you give up by taking this action
 - Priority: High / Medium / Low
@@ -206,6 +206,21 @@ Define 2-3 stress scenarios based on regime-shift risks. For each:
 position-level drawdown estimates, portfolio-level drawdown, top
 contributors to loss and protection. Flag if any scenario breaches
 escalation thresholds (>25% drawdown or >5% single-position contribution).
+
+### 8.5. Hedge Playbook
+Using the live option chain and market data from the orchestrator
+(hedge-data JSON), design concrete hedge strategies for each stress
+scenario from Step 8. For each scenario: identify hedgeable exposure,
+select the best-fit instrument (put options, inverse ETFs, safe havens,
+or collars), calculate hedge size from delta and exposure at risk,
+calculate annualized cost from option premium or ETF expense ratio,
+determine activation mode (carry as insurance / deploy on trigger /
+scale in), and explain why this specific hedge was chosen. Produce
+a per-scenario hedge table and a hedge portfolio summary with overlap
+analysis, consolidated cost, cost-efficiency ranking, and minimum
+viable hedge recommendation. When hedge data is unavailable, fall back
+to directional estimates using VIX-based approximations and mark all
+figures as [ESTIMATED].
 
 ### 9. Staged Deployment Plan
 For ADD/REBALANCE recommendations above 1% liquid NAV: deploy over

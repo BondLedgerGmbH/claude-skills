@@ -22,6 +22,19 @@ You will receive file paths to:
 - Impact analysis (from impact-analyst subagent)
 - Global market research cache (from market-researcher subagent, for the Global Market Context output section)
 - Opportunity scoring report (from opportunity-scorer subagent; may be absent)
+- Hedge data (hedge-data-{timestamp}.json from orchestrator Step 7.5; may be absent).
+  Contains live option chain data (strikes, bid/ask, IV, delta, gamma),
+  inverse ETF snapshots (price, expense ratio, leverage), VIX level, and
+  safe haven quotes. Fetched from IB via authenticated gateway sessions.
+  When present, use this data for precise hedge recommendations. When
+  absent, fall back to directional estimates using WebSearch for current
+  VIX level and approximate option costs.
+  **IB data limitations:** `theta` and `vega` are always null (CP Gateway
+  does not return them). `open_interest` is always null. Do not treat
+  null greeks as zero; estimate theta from time decay approximation
+  (theta ~ -option_mid / days_to_expiry for ATM options) when needed
+  for cost analysis. `implied_vol` has already been corrected to
+  positive values by the orchestrator.
 - Full portfolio data (portfolio-summary-{timestamp}.json: positions, balances,
   allocations). This JSON contains both IB and off-platform positions in a
   single `positions` array. Off-platform positions have `account: "off_platform"`
@@ -57,7 +70,13 @@ Before generating recommendations, verify all input files:
    If missing: STOP. Return error.
 6. Read output-template.md. Confirm it contains Required Sections.
    If missing: STOP. Return error.
-7. Previous analysis file is optional. If provided, verify it is
+7. Read hedge-data-{timestamp}.json (if provided). Confirm it parses
+   as valid JSON with `option_chains` and `inverse_etfs` keys. Check
+   `data_quality` for any failed chains or snapshots. If file is
+   missing or not provided: WARN. Hedge Playbook will use directional
+   estimates instead of live data. If present but partially degraded:
+   use available data, note gaps per chain.
+8. Previous analysis file is optional. If provided, verify it is
    readable and contains a Recommendations section. If malformed:
    WARN and skip delta analysis rather than failing.
 
@@ -177,6 +196,146 @@ Where Behaviour is: **hedge** (reduces portfolio loss) / **neutral** /
   flag for escalation (see Escalation Flags section)
 - If any single position contributes >5% of total portfolio loss in
   any scenario: flag for escalation
+
+### 3.5. Hedge Playbook
+
+For each stress scenario defined in Step 3, design a concrete hedge
+strategy using the hedge data from the orchestrator (hedge-data JSON).
+The Hedge Playbook bridges the gap between "this scenario hurts" (stress
+test) and "here is exactly how to protect against it" (actionable hedge).
+
+**3.5.1: Volatility Regime Context**
+
+Read the VIX level from the hedge data (or fetch via WebSearch if absent).
+Classify the current vol regime:
+- VIX < 15: Low vol. Hedges are cheap. Favorable time to establish
+  protection. Note this explicitly.
+- VIX 15-20: Normal vol. Standard hedge pricing.
+- VIX 20-30: Elevated vol. Hedges are expensive. Consider inverse ETFs
+  or collar strategies to reduce cost. Note the premium.
+- VIX > 30: High vol / crisis. Hedges are very expensive. Consider
+  whether protection is still worth the cost or if the move has
+  already happened.
+
+State the VIX level, the regime classification, and what this means
+for hedge cost-effectiveness.
+
+**3.5.2: Per-Scenario Hedge Design**
+
+For each stress scenario from Step 3:
+
+1. **Identify hedgeable exposure.** Which positions and clusters drive
+   the loss in this scenario? What is the total exposure at risk (in
+   USD and % of liquid NAV)?
+
+2. **Select the best-fit instrument.** From the hedge data, find the
+   instrument that most directly offsets the identified risk. Prefer:
+   - Put options on the most correlated ETF/index for targeted hedges
+   - Inverse ETFs for longer-duration or cost-sensitive hedges
+   - Safe haven assets (GLD, TLT) for broad macro hedges
+   - Collar strategies (sell calls to fund puts) when vol is elevated
+
+3. **Select strike and expiry.** For put options:
+   - Strike: choose a strike near the scenario's expected drawdown level.
+     For example, if the scenario estimates a 15% drawdown in SPY, select
+     a put strike ~10-15% OTM (provides protection for most of the move).
+   - Expiry: match to the scenario's time horizon. Near-term scenarios
+     (1-3 months) use near-term options. Structural risks use 3-6 month
+     options. Use the 3 expiry tenors available in the hedge data.
+   - Target delta: -0.20 to -0.35 for cost-efficient downside protection.
+
+4. **Calculate hedge size.** The hedge should offset a meaningful portion
+   of the scenario's projected loss:
+   - Determine the dollar exposure at risk from the stress test
+   - Calculate the number of contracts needed: exposure_at_risk / (100 * delta * underlying_price)
+   - Convert to % of liquid NAV: (contracts * option_mid * 100) / liquid_nav
+   - Size the hedge to offset 50-80% of the scenario drawdown (full
+     hedging is rarely cost-efficient)
+
+5. **Calculate annualized cost.**
+   - For options: annualized_cost = (option_mid / underlying_price) * (365 / days_to_expiry) * 100
+     This is the annualized premium as a % of the underlying value.
+     Also calculate absolute cost: contracts * option_mid * 100.
+   - For inverse ETFs: annualized_cost = expense_ratio + estimated_tracking_error.
+     Tracking error estimate: |leverage| * 0.5% per year for 1x, scale
+     proportionally for leveraged. Note: leveraged inverse ETFs suffer
+     from daily rebalancing decay and are suitable only for short-term
+     hedges (weeks, not months).
+   - For collars: net cost = put_premium - call_premium. Can be zero-cost
+     if strikes are chosen appropriately.
+
+6. **Determine activation mode.**
+   - "Carry as insurance": deploy immediately, accept the carry cost as
+     ongoing portfolio insurance. Appropriate when the scenario is a
+     persistent structural risk.
+   - "Deploy on trigger": specify the exact trigger condition (e.g.,
+     "if VIX breaks 25", "if SPY drops below 550", "if 10Y yield
+     exceeds 5%"). Appropriate when the scenario has a clear early
+     warning signal. Note: waiting for the trigger means hedges will
+     be more expensive when you need them.
+   - "Scale in": deploy a partial position now, add on trigger.
+
+7. **Write the rationale.** For each hedge, explain in 2-3 sentences:
+   - What specific portfolio exposure this hedge protects
+   - Why this instrument was chosen over alternatives
+   - What the hedge does NOT protect against (basis risk, gap risk,
+     correlation breakdown)
+
+Output for each scenario - the hedge recommendation table:
+
+| # | Instrument | Type | Strike/Level | Expiry | Delta | Contracts/Shares | Notional (USD) | Size (% Liq NAV) | Cost (USD) | Annualized Cost (%) | Activation | Drawdown Offset (%) |
+|---|------------|------|-------------|--------|-------|------------------|----------------|-------------------|------------|---------------------|------------|---------------------|
+
+Where:
+- Type: put option / inverse ETF / call option / collar / safe haven
+- Delta: option delta (N/A for ETFs)
+- Contracts/Shares: number of option contracts (x100) or ETF shares
+- Drawdown Offset: what % of the scenario's total portfolio drawdown
+  this hedge offsets
+
+Below the table, include:
+- **Rationale**: per-hedge explanation (why this hedge, what it protects,
+  what it doesn't protect)
+- **Data source**: `[LIVE]` if from hedge-data JSON with actual
+  bid/ask/greeks, `[ESTIMATED]` if using directional estimates
+
+**3.5.3: Hedge Portfolio Summary**
+
+After all per-scenario hedge tables, produce a summary section:
+
+**Overlap analysis:** Identify hedges that provide overlapping protection
+across multiple scenarios. For example, SPY puts protect against both a
+broad market correction and a tech-specific drawdown (partially). Group
+overlapping hedges and note which scenarios each covers.
+
+**Consolidated hedge portfolio:** If the investor were to implement ALL
+recommended hedges, what is the:
+- Total annual carry cost (USD and % of liquid NAV)
+- Total notional protection
+- Overlap-adjusted cost (removing redundant hedges)
+
+**Cost-efficiency ranking:** Rank all recommended hedges by cost per
+unit of drawdown protection: annualized_cost / drawdown_offset. Lower
+is better. This helps the investor prioritize if they want to implement
+only a subset.
+
+**Minimum viable hedge:** If the investor wants the single most
+cost-efficient hedge that provides the broadest protection, which one
+is it? State the instrument, cost, and what it covers.
+
+**3.5.4: Fallback when hedge data is unavailable**
+
+If the hedge-data JSON was not provided or is empty:
+- State: "Live options data unavailable. Hedge recommendations use
+  directional estimates based on current VIX and historical IV levels."
+- Use WebSearch to fetch current VIX level
+- Estimate option costs using the approximation:
+  ATM put cost ~ VIX / sqrt(12) * months_to_expiry (as % of underlying)
+  OTM put cost: scale by delta/0.50
+- For inverse ETFs: use known expense ratios from the static table
+- Mark all cost figures as `[ESTIMATED]`
+- Recommend specific instruments and strategies but note that exact
+  pricing should be verified before execution
 
 ### 4. Staged Deployment Plan
 
@@ -302,16 +461,33 @@ the output-template.md requirements:
 8. Steelman Check is present for top 3 recommendations
 9. Stress Testing section present with at least 2 scenarios, each with
    position-level impact table
-10. Staged Deployment Plan present for all ADD/REBALANCE recommendations
+10. Hedge Playbook section present with: vol regime context, per-scenario
+    hedge tables (instrument, type, strike, expiry, delta, size, cost,
+    activation, drawdown offset), per-hedge rationale, hedge portfolio
+    summary (overlap analysis, consolidated cost, cost-efficiency ranking,
+    minimum viable hedge). Data source labels on all cost figures.
+11. Staged Deployment Plan present for all ADD/REBALANCE recommendations
     above 1% liquid NAV
-11. Watchlist contains specific items with trigger conditions
-12. Monitoring Framework present with all three tiers (monthly macro,
+12. Watchlist contains specific items with trigger conditions
+13. Monitoring Framework present with all three tiers (monthly macro,
     weekly position, regime shift signals)
-13. If comparison mode: Comparison Analysis and Decision Triggers present
-14. If prior analysis exists: Previous Analysis Delta section is present
-15. Escalation Flags section present (even if "No escalation flags triggered")
-16. Appendix: Full Position List is present, includes off-platform positions,
+14. If comparison mode: Comparison Analysis and Decision Triggers present
+15. If prior analysis exists: Previous Analysis Delta section is present
+16. Escalation Flags section present (even if "No escalation flags triggered")
+17. Appendix: Full Position List is present, includes off-platform positions,
     and is sorted by market value
+
+18. Abbreviation and label footnotes: every table or paragraph that
+    introduces a bracket label (e.g. `[GEO]`, `[RV]`, `[INTEL]`,
+    `[USD_DET]`, `[IMPACT-DRIVEN]`, `[OPPORTUNITY-SCORER]`, `[LIVE]`,
+    `[ESTIMATED]`, `[FACT]`, `[INFERENCE]`) or financial abbreviation
+    (e.g. DM, EM, HY, IG, NAV, CAPE, DXY, OTM, IV, ETC, ISM, PMI,
+    CPI, SLOOS, FMS, YTD, EMBI, C&I, IRA) for the first time must
+    have a footnote block immediately below it defining all new terms.
+    Format: `> **Footnotes:** DM = Developed Markets; [GEO] = ...`.
+    Each term defined only once (on first appearance). See
+    output-template.md "Abbreviation and Label Footnotes" section for
+    full rules.
 
 If any check fails: fix the output before reporting completion.
 
