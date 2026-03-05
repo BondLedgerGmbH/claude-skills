@@ -151,7 +151,7 @@ For each recommendation:
 - Tax note:
   - Personal account: no capital gains tax; flag dividend withholding if relevant
   - Corporate account: corporate tax impact; participation exemption eligibility
-  - Off-platform: apply personal tax treatment (local tax rules per investor-context.md)
+  - Off-platform: apply personal tax treatment (local tax rules)
     unless the asset is held in a corporate structure
 - Tradeoff: what you give up by taking this action
 - Priority: High / Medium / Low
@@ -394,13 +394,15 @@ unified section. Do NOT create separate "Action Summary Table" and
 
 **Action Summary Table:** One table covering all recommendations:
 
-| # | Action | Ticker/Asset | Account | Size (% NAV) | Amount | Deployment | Source | Priority |
+| # | Action | Ticker/Asset | Account | From (Fund Source) | To (Target Instrument) | Amount (USD) | Size (% Liq NAV) | Deployment | Source | Priority |
 
-Where Deployment is:
-- "Immediate" for EXITs, TRIMs, and positions below 1% liquid NAV
-- "Staged: N weeks" for ADDs/REBALANCEs above 1% liquid NAV
+Column definitions:
+- From: where capital comes from ("Cash", "USD cash", "EUR cash", "Proceeds from Rec N", or the position being sold)
+- To: the specific instrument being bought ("Cash" for sells, or target ticker)
+- Deployment: "Immediate" or "Staged: N weeks"
 
-Below the table: total new capital deployed and post-trade cash position.
+Below the table: total new capital deployed, total capital freed,
+net cash flow, post-trade cash position (USD and % of liquid NAV).
 
 **Deployment Schedule:** For each staged recommendation (above 1%
 liquid NAV), include its tranche table directly below the summary:
@@ -495,8 +497,9 @@ Escalation flag types:
 ## Output
 Format the complete analysis per the output-template.md structure.
 Write to the file path provided by the orchestrator.
-Include all required sections. The Global Market Context and Impact Assessment
-sections should be incorporated from the earlier subagent outputs.
+Include all required sections. The Global Market Context (with Executive
+Summary) and Impact & Risk Assessment sections should be incorporated
+from the earlier subagent outputs.
 
 ## Output Validation
 Before reporting completion, re-read the output file and verify against
@@ -504,17 +507,24 @@ the output-template.md requirements:
 1. Header section is present with: date, mode, research freshness, IB NAV,
    liquid NAV, total wealth, position count, regime classification, data
    quality status, spot prices used for off-platform valuations
-2. Portfolio Snapshot contains hierarchical asset class allocation table
-   (parent rows with sub-class rows per output-template.md) with both
-   % Liquid NAV and % Total NAV columns, and concentration flags.
-   Cash & Cash Equivalents row equals uninvested cash + money market funds.
-   No separate off-platform holdings table (all integrated into allocation).
-3. Global Market Context section is present and substantive (not a
-   placeholder). Content sourced from research cache.
-4. Impact Assessment section is present with position-level impact table
+2. Portfolio Snapshot contains only the hierarchical asset class allocation
+   table (parent rows with sub-class rows per output-template.md) with both
+   % Liquid NAV and % Total NAV columns. Cash & Cash Equivalents row equals
+   uninvested cash + money market funds. No separate off-platform holdings
+   table (all integrated into allocation). Sector, currency, geography,
+   top 10 positions, and concentration flags are in the Appendix, NOT here.
+3. Global Market Context section is present with: Executive Summary
+   (plain-language 2-3 paragraph overview) followed by Detailed Findings
+   (structured by seven research sections). Content sourced from research cache.
+4. Impact & Risk Assessment section is present with: thesis/market impact
+   summary, position-level impact matrix, and risk dimensions (five
+   dimensions from analysis framework). No separate Risk Assessment section.
 5. Key Takeaways contains 3-5 specific insights (not generic statements)
-6. Risk Assessment covers all five dimensions
+6. Opportunity Landscape includes both Top 5 opportunities AND Top 5 losers
+   (assets/sectors most likely to underperform in current regime)
 7. Recommendations section contains:
+   - New Opportunity Overlap Assessment table (if opportunity scoring
+     available) placed BEFORE individual recommendation blocks
    - At least one recommendation (unless analysis genuinely finds no
      action needed, in which case state this explicitly)
    - Every recommendation has: source tag, action, ticker, account,
@@ -526,11 +536,15 @@ the output-template.md requirements:
     holdings in the same currency; uninvested cash >5% of liquid NAV
     is flagged. If any optimization was missed, revise the recommendation
     before reporting completion.
-9. Action Plan section contains a unified Action Summary Table (with
-    Deployment column: "Immediate" or "Staged: N weeks") followed by
-    deployment schedules (tranche tables with abort conditions) for all
-    staged recommendations. No separate "Staged Deployment Plan" section
-    exists. Immediate-execution recommendations grouped in one line.
+9. Action Plan section contains a unified Action Summary Table with
+    columns: #, Action, Ticker/Asset, Account, From (Fund Source),
+    To (Target Instrument), Amount (USD), Size (% Liq NAV), Deployment,
+    Source, Priority. Every row must show where capital comes from and
+    where it goes. Followed by deployment schedules (tranche tables with
+    abort conditions) for all staged recommendations. Below the table:
+    total capital deployed, total freed, net cash flow, post-trade cash.
+    No separate "Staged Deployment Plan" section. Immediate-execution
+    recommendations grouped in one line.
 10. Steelman Check is present for top 3 recommendations
 11. Stress Testing section present with at least 2 scenarios, each with
     position-level impact table
@@ -545,8 +559,10 @@ the output-template.md requirements:
 15. If comparison mode: Comparison Analysis and Decision Triggers present
 16. If prior analysis exists: Previous Analysis Delta section is present
 17. Escalation Flags section present (even if "No escalation flags triggered")
-18. Appendix: Full Position List is present, includes off-platform positions,
-    and is sorted by market value
+18. Appendix contains: Allocation by Sector, Allocation by Currency,
+    Allocation by Geography, Top 10 Positions, Concentration Flags, and
+    Full Position List (in that order). Full Position List includes
+    off-platform positions and is sorted by market value.
 19. Abbreviation and label footnotes: every table or paragraph that
     introduces a bracket label (e.g. `[GEO]`, `[RV]`, `[INTEL]`,
     `[USD_DET]`, `[IMPACT-DRIVEN]`, `[OPPORTUNITY-SCORER]`, `[LIVE]`,

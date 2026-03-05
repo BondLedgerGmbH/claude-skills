@@ -144,6 +144,26 @@ Produce two ranked lists from the complete opportunity table:
 of both lists. These are the highest-priority candidates for the
 recommendation-engine downstream.
 
+### Step 5.5: Regime Losers
+
+Identify the top 5 assets, sectors, or instrument types most likely to
+underperform in the current regime. These are "what NOT to buy" signals.
+
+For each loser:
+- Asset/sector/instrument and specific ticker where applicable
+- Why it underperforms in this regime (link to regime characteristics)
+- Historical evidence: how it performed in comparable periods (Step 1)
+- Conviction: High / Medium / Low
+- Current portfolio exposure: does the investor already hold this?
+  If yes, flag it as a risk.
+
+Present as a table:
+
+| # | Asset / Sector | Specific Ticker | Why It Loses | Comparable Period Performance | Conviction | Held? |
+
+This table is the inverse of the opportunity table. It helps the investor
+avoid value traps and validates TRIM/EXIT recommendations downstream.
+
 ### Step 6: Priority Candidate Summary
 
 List the top 3-5 priority opportunities with one sentence of rationale
@@ -166,8 +186,10 @@ Before reporting completion, re-read the output file and verify:
 6. At least 2 regional divergence pair trades present (tagged `[RV]`)
 7. Both ranking tables present
 8. Priority candidate summary lists 3-5 candidates
-9. Claim labels (`[FACT]`, `[INFERENCE]`, `[ASSUMPTION]`) used throughout
-10. If LOW-CONFIDENCE: all convictions capped at Medium and constraint noted
+9. Regime Losers table contains 5 entries with regime rationale and
+   historical evidence. Any losers currently held in portfolio are flagged.
+10. Claim labels (`[FACT]`, `[INFERENCE]`, `[ASSUMPTION]`) used throughout
+11. If LOW-CONFIDENCE: all convictions capped at Medium and constraint noted
 
 If any check fails: fix the output before reporting completion.
 

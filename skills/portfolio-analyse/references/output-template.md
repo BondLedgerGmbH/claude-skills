@@ -35,8 +35,8 @@ Rules:
   abbreviation a reader unfamiliar with finance would not immediately
   understand.
 - Well-known company tickers (MSFT, AAPL) and instrument tickers
-  (SPY, QQQ) do NOT need footnotes. Account names do not need
-  footnotes. Standard units (USD, EUR, CHF, oz,
+  (SPY, QQQ) do NOT need footnotes. Account names ([ACCOUNT_NAME],
+  Personal) do not need footnotes. Standard units (USD, EUR, CHF, oz,
   BTC) do not need footnotes.
 - Thesis-derived bracket labels (e.g. `[INTEL]`, `[USD_DET]`,
   `[AI_BUBBLE]`) must be footnoted with the full thesis name from
@@ -109,60 +109,16 @@ Notes on the table:
 - Spot prices used for off-platform valuations (gold/oz, silver/oz,
   BTC) with fetch timestamp should appear as a footnote below the table.
 
-#### Allocation by Sector
-
-All positions, on-platform and off-platform, grouped by sector. This is
-NOT equities-only. Every position in the portfolio must appear in exactly
-one sector row. Use the `sector` field from the portfolio JSON for IB
-positions. Off-platform positions use the sectors assigned during
-enrichment (Precious Metals, Cryptocurrency, Private Equity / Fintech,
-Real Estate). Same dual-column format (% Liquid NAV, % Total NAV).
-
-| Sector | Value (USD) | % Liquid NAV | % Total NAV |
-|--------|-------------|--------------|-------------|
-| Technology | | | |
-| Energy | | | |
-| Precious Metals | | | |
-| Cryptocurrency | | | |
-| Private Equity / Fintech | | | |
-| Real Estate *(illiquid)* | | | |
-| Cash & Cash Equivalents | | | |
-| ... | | | |
-| **Total** | | 100% | 100% |
-
-Sectors are not predefined. Use the actual sectors present in the portfolio.
-The table above is illustrative. Every sector with holdings must appear.
-
-#### Allocation by Currency
-
-All positions grouped by denomination currency. Off-platform assets:
-precious metals and crypto are USD-denominated (global spot pricing),
-private equity options are USD, real estate is in local currency (per
-investor-context.md). Same dual-column format.
-
-| Currency | Value (USD) | % Liquid NAV | % Total NAV |
-|----------|-------------|--------------|-------------|
-
-#### Allocation by Geography
-
-All positions grouped by geographic exposure. Use the country/region of
-the underlying business or asset, not the exchange listing. Off-platform:
-precious metals = Global, crypto = Global, private equity = per company
-domicile, real estate = per property location. Same dual-column format.
-
-| Geography | Value (USD) | % Liquid NAV | % Total NAV |
-|-----------|-------------|--------------|-------------|
-
-#### Top 10 Positions
-
-Top 10 positions by market value (with account label, including off-platform).
-
-#### Concentration Flags
-
-Computed on full portfolio including off-platform. Report as provided
-in the portfolio JSON.
-
 ### Global Market Context
+
+#### Executive Summary
+2-3 paragraph narrative summarising the current macro environment in plain
+language. Cover: what regime we are in and why, the dominant risks and
+tailwinds, and the single most important thing an investor should know
+right now. This is the "if you read nothing else" section. No tables,
+no jargon, no bracket labels. Written for a smart non-specialist.
+
+#### Detailed Findings
 Summary of the global market research findings, structured by the
 seven sections: macro data highlights, regime classification, credit
 cycle, geopolitical risks, regional/sector developments, tactical
@@ -173,22 +129,30 @@ regardless of mode. Keep it concise but comprehensive.
 Summary of the opportunity-scorer's findings (if available):
 - Dominant regime and historical comparable periods (key parallels)
 - Top 5 regime-fitted opportunities with conviction and time horizon
+- Top 5 regime-fitted losers (assets/sectors most likely to underperform
+  in the current regime, with conviction and rationale). These are
+  "what NOT to buy" signals. Same table format as opportunities but
+  showing the worst-positioned assets given current conditions.
 - Geopolitical tradeable expressions
 - Regional divergence pair trades
 If opportunity scoring was not available, note the omission.
 
-### Impact Assessment
-- Summary of thesis/market findings (mode-specific input combined
-  with global context)
-- Position-by-position impact matrix (table format):
+### Impact & Risk Assessment
+Combined assessment of how current conditions affect the portfolio.
+
+#### Thesis / Market Impact Summary
+Summary of thesis/market findings (mode-specific input combined with
+global context). What is happening and why it matters for this portfolio.
+
+#### Position Impact Matrix
 
 | Position | Account | Exposure | Impact | Direction | Magnitude | Confidence |
 |----------|---------|----------|--------|-----------|-----------|------------|
 
-- New Opportunity Overlap Assessment table (if available):
-
-| Opportunity | Overlaps With | Overlap Type | Assessment |
-|-------------|---------------|--------------|------------|
+#### Risk Dimensions
+Structured by the five risk dimensions from the analysis framework.
+Reference specific positions. For each dimension, state the current
+risk level and which positions are most exposed.
 
 ### Key Takeaways
 3-5 specific, actionable insights from the analysis. Each takeaway should
@@ -205,11 +169,21 @@ of the analysis.
 - Conflict matrix
 - Positioning assessment: which scenario hurts more
 
-### Risk Assessment
-Structured by the five risk dimensions from the analysis framework.
-Reference specific positions.
-
 ### Recommendations
+
+#### New Opportunity Overlap Assessment (if available)
+
+Before presenting recommendations, show which new opportunities from the
+Opportunity Landscape overlap with existing holdings. This contextualises
+the [OPPORTUNITY-SCORER] recommendations that follow.
+
+| Opportunity | Overlaps With | Overlap Type | Assessment |
+|-------------|---------------|--------------|------------|
+
+Where Assessment is: `PROCEED` (no meaningful overlap), `CAUTION`
+(partial overlap, justify adding), or `REDUNDANT` (skip).
+
+#### Recommendation Details
 
 Present each recommendation as a structured block with: source tag,
 action, specific instrument (ticker, exchange), target account, position
@@ -229,17 +203,27 @@ instructions for each recommendation in a single section:
 
 **Action Summary Table:**
 
-| # | Action | Ticker/Asset | Account | Size (% NAV) | Amount | Deployment | Source | Priority |
-|---|--------|--------------|---------|--------------|--------|------------|--------|----------|
+| # | Action | Ticker/Asset | Account | From (Fund Source) | To (Target Instrument) | Amount (USD) | Size (% Liq NAV) | Deployment | Source | Priority |
+|---|--------|--------------|---------|--------------------|-----------------------|-------------|------------------|------------|--------|----------|
 
-Where Deployment is one of:
-- "Immediate" (for EXITs, TRIMs, and positions below 1% liquid NAV)
-- "Staged: N weeks" (for ADDs/REBALANCEs above 1% liquid NAV)
+Column definitions:
+- **From (Fund Source):** Where the capital comes from. For ADDs: "Cash",
+  "USD cash", "EUR cash", or "Proceeds from Rec N". For TRIMs/EXITs:
+  the position being sold. For REBALANCEs: the source position.
+- **To (Target Instrument):** The specific instrument being bought.
+  For TRIMs/EXITs: "Cash" or "Deploy per Rec N" if proceeds are earmarked.
+- **Amount (USD):** Dollar amount of the trade.
+- **Size (% Liq NAV):** Position size as percentage of liquid NAV.
+- **Deployment:** "Immediate" (for EXITs, TRIMs, and positions below 1%
+  liquid NAV) or "Staged: N weeks" (for ADDs/REBALANCEs above 1% liquid NAV).
 
 For comparison mode, add a Condition column after Source.
 
-Below the summary table, show total new capital deployed and post-trade
-cash position.
+Below the summary table, show:
+- Total new capital deployed (USD)
+- Total capital freed (USD)
+- Net cash flow
+- Post-trade cash position (USD and % of liquid NAV)
 
 **Deployment Schedule:**
 
@@ -367,7 +351,48 @@ List of threshold breaches and upstream re-run recommendations,
 or "No escalation flags triggered." This section is consumed by
 the orchestrator to decide whether to re-dispatch upstream subagents.
 
-### Appendix: Full Position List
+### Appendix
+
+#### Allocation by Sector
+
+| Sector | Value (USD) | % Liquid NAV | % Total NAV |
+|--------|-------------|--------------|-------------|
+
+Include all on-platform and off-platform positions. Classify off-platform
+holdings into appropriate sectors (Precious Metals, Cryptocurrency,
+Private Equity / Fintech, Real Estate).
+
+#### Allocation by Currency
+
+| Currency | Value (USD) | % Liquid NAV | % Total NAV |
+|----------|-------------|--------------|-------------|
+
+#### Allocation by Geography
+
+| Region | Value (USD) | % Liquid NAV | % Total NAV |
+|--------|-------------|--------------|-------------|
+
+Use issuer domicile, not listing exchange. Off-platform holdings:
+precious metals → Global, crypto → Global, real estate → by property
+location, private equity → by company domicile.
+
+#### Top 10 Positions
+
+| # | Position | Account | Value (USD) | % Liquid NAV |
+|---|----------|---------|-------------|--------------|
+
+Across all accounts (IB + off-platform). Sorted by market value descending.
+
+#### Concentration Flags
+
+List any position or sector exceeding 10% of liquid NAV. For each flag:
+- Position/sector name, account, current weight
+- Whether this is intentional (thesis-driven) or drift
+- Risk note
+
+If no flags: "No concentration flags triggered."
+
+#### Full Position List
 Complete position list across all accounts (IB + off-platform) with current
 values. Off-platform positions included alongside IB positions. Sorted by
 market value descending. Each row shows: ticker/asset name, account,
