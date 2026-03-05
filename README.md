@@ -14,7 +14,7 @@ When you ask Claude Code to perform a task that matches a skill's trigger, it lo
 |-------|-------------|
 | [skill-security-scanner](skills/skill-security-scanner/) | Scans AI skill packages for security risks, vulnerabilities, backdoors, and prompt injection. Acts as a Senior Security Engineer. |
 | [yt-transcript](skills/yt-transcript/) | Extracts YouTube video transcripts and produces structured summaries with key takeaways. Handles non-English videos via auto-translation. Outputs markdown + PDF. |
-| [ib-analyseportfolio](skills/ib-analyseportfolio/) | Analyses an Interactive Brokers portfolio against a thesis, YouTube video, market scan, or comparison of two views. Runs a 3-subagent pipeline (market research, impact analysis, recommendations). |
+| [ib-analyseportfolio](skills/ib-analyseportfolio/) | Analyses an Interactive Brokers portfolio against a thesis, YouTube video, market scan, or comparison of two views. Runs a 4-subagent pipeline (market research, opportunity scoring, impact analysis, recommendations). |
 
 ## Installation
 
@@ -43,7 +43,7 @@ rm -rf /tmp/claude-skills
 
 ### Install ib-analyseportfolio (additional steps)
 
-The IB portfolio analysis skill uses three subagents that need to be placed in `~/.claude/agents/`:
+The IB portfolio analysis skill uses four subagents that need to be placed in `~/.claude/agents/`:
 
 ```bash
 git clone https://github.com/xjarko123/claude-skills.git /tmp/claude-skills

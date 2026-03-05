@@ -17,6 +17,7 @@ input affect the portfolio.
 ## Input Files
 You will receive file paths to:
 - Global market research report (from market-researcher subagent)
+- Opportunity scoring report (from opportunity-scorer subagent; may be absent)
 - Thesis/transcript input (if thesis, YouTube, or comparison mode)
 - Full portfolio data (portfolio-summary-{timestamp}.json: positions, balances, allocations, concentration flags)
 - investor-context.md (investor profile, account structure, standing theses)
@@ -25,9 +26,10 @@ You will receive file paths to:
 
 ## Input Validation
 Before starting analysis, verify all input files:
-1. Read market research report. Confirm it contains all five layers
-   (macro, geopolitical, regional/sector, micro/tactical, synthesis).
-   If any layer is missing: WARN in output but continue with available data.
+1. Read market research report. Confirm it contains: Data Quality
+   Assessment, Regime Classification, Credit Cycle, Geopolitical Risk
+   Overlay, Regional/Sector, Micro/Tactical, and Synthesis sections.
+   If any section is missing: WARN in output but continue with available data.
    If file is empty or unreadable: STOP. Return error: "Market research
    report is empty or unreadable at {path}."
 2. Read portfolio-summary-{timestamp}.json. Confirm it parses as valid JSON and
@@ -46,6 +48,11 @@ Before starting analysis, verify all input files:
    section. If missing: STOP. Return error.
 6. Validate mode identifier is one of: thesis, youtube, scan, comparison.
    If unrecognised: STOP. Return error.
+7. Read opportunity scoring report (if provided). Confirm it contains
+   the Opportunity Identification Table and dual rankings. If file
+   is missing or was not provided: WARN and continue. The impact
+   analysis can proceed without opportunities; it just cannot produce
+   the overlap assessment (Step 2.5).
 
 ## Analysis Steps
 
@@ -61,6 +68,37 @@ Before starting analysis, verify all input files:
   cloud providers dependent on AI capex)
 - Assess USD concentration across all holdings
   (including USD-denominated equities, ETFs, stablecoins)
+
+### 2.5. New Opportunity Overlap Assessment
+
+Skip this step if no opportunity scoring report was provided.
+
+For each opportunity in the opportunity-scorer's table, check against
+the current portfolio:
+
+1. **Direct overlap**: Does this opportunity share a ticker with an
+   existing holding? (e.g., recommending to add AMZN when AMZN is
+   already held in BondLedger)
+2. **Sector/theme overlap**: Does this opportunity fall in the same
+   sector or thesis cluster as existing holdings? Would it increase
+   concentration in an already-heavy sector?
+3. **Correlation cluster overlap**: Using the clusters identified in
+   Step 2, would adding this opportunity increase the size of an
+   existing correlated cluster?
+4. **Standing thesis alignment**: Does the opportunity align with or
+   contradict the investor's standing theses from investor-context.md?
+
+Output an overlap assessment table:
+
+| Opportunity | Overlaps With | Overlap Type | Cluster Impact | Assessment |
+|-------------|---------------|--------------|----------------|------------|
+
+Where Assessment is one of:
+- `PROCEED`: no meaningful overlap with existing portfolio
+- `CAUTION`: partial overlap exists; note which holdings overlap and
+  the resulting combined exposure if added
+- `REDUNDANT`: substantially duplicates existing exposure; recommend
+  skip unless the recommendation-engine provides explicit justification
 
 ### 3. Thesis/Event Impact Assessment
 For each relevant position or cluster:
@@ -85,6 +123,15 @@ Evaluate across five dimensions:
 - Valuation risk: elevated multiples, sentiment vulnerability
 - Currency/sovereign risk: USD depreciation, US fiscal policy
 
+**Prospective concentration risk** (if opportunity scoring report was
+provided): Calculate what the portfolio's sector and geographic
+concentration would look like if all PROCEED and CAUTION opportunities
+from Step 2.5 were added at their suggested conviction-based sizes
+(High=3-5%, Medium=1-3%, Low=0.5-1% of liquid NAV). Flag any sector
+that would exceed 30% or any single position that would exceed 5%.
+This gives the recommendation-engine a pre-computed view of post-trade
+concentration before it constructs the final recommendations.
+
 ### 6. Comparison Analysis (comparison mode only)
 When two inputs are provided:
 - Source A summary: core argument in one paragraph
@@ -99,7 +146,7 @@ This is an intermediate file consumed by the recommendation-engine subagent.
 
 ## Output Validation
 Before reporting completion, re-read the output file and verify:
-1. All five required sections are present: Portfolio Snapshot, Correlation
+1. All five core sections are present: Portfolio Snapshot, Correlation
    and Cluster Analysis, Thesis/Event Impact Assessment, Currency Exposure
    Analysis, Risk Assessment
 2. Portfolio Snapshot contains: combined NAV, allocation tables, concentration flags
@@ -107,11 +154,14 @@ Before reporting completion, re-read the output file and verify:
    position, account, exposure, impact, direction, magnitude, confidence
 4. Risk Assessment covers all five dimensions (micro, macro, geopolitical,
    valuation, currency/sovereign)
-5. If comparison mode: Comparison Analysis section is present with source
+5. If opportunity scoring report was provided: New Opportunity Overlap
+   Assessment section (Step 2.5) is present with the overlap table.
+   Risk Assessment includes prospective concentration risk calculation.
+6. If comparison mode: Comparison Analysis section is present with source
    summaries, agreement matrix, conflict matrix, and positioning assessment
-6. Confidence labels are used throughout ([VERIFIED], [ESTIMATED],
+7. Confidence labels are used throughout ([VERIFIED], [ESTIMATED],
    [UNCERTAIN], [NOT ASSESSED])
-7. No sections are empty headers without content
+8. No sections are empty headers without content
 
 If any check fails: fix the output before reporting completion. If a section
 cannot be completed (e.g., insufficient data for correlation analysis),
