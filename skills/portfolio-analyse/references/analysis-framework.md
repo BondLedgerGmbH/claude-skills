@@ -102,7 +102,14 @@ cash by subtracting positions from NAV. Use the values directly from the JSON.
 Allocation tables use the hierarchical format defined in output-template.md:
 parent rows (bold, showing sub-class sums) and indented sub-class rows.
 
+**Universal inclusion rule.** Every allocation table (asset class, sector,
+currency, geography) must include ALL positions: on-platform and off-platform.
+No table may be scoped to "equities only" or "IB only". Every position in
+the portfolio JSON `positions` array must appear in exactly one row of each
+allocation table. The sum of each table must equal the portfolio total.
+
 - Allocation by: asset class (hierarchical), sector, geography, currency.
+  See output-template.md for the required table structures.
 - Per-account breakdown (for tax-aware recommendations): include off_platform
   as a separate account alongside IB accounts.
 - Concentration flags: pre-computed in the JSON on the full portfolio
