@@ -183,12 +183,57 @@ Where Source is: `[IMPACT-DRIVEN]` or `[OPPORTUNITY-SCORER]`
 For comparison mode, each recommendation also includes a Condition:
 "Both scenarios", "If Source A", or "If Source B"
 
+#### Regime Opportunity Coverage
+
+Every opportunity from the Opportunity Landscape must be explicitly
+addressed here. This ensures no regime-fitted opportunity is silently
+ignored.
+
+**Actioned opportunities:** For each opportunity that resulted in a
+recommendation above, reference the recommendation number:
+
+| Opportunity | Rec # | Action | Instrument | Rationale |
+|-------------|-------|--------|------------|-----------|
+
+**Not actioned opportunities:** For each opportunity that was NOT
+recommended, explain why. Valid reasons include: already sufficiently
+exposed, overlap with existing holdings, insufficient conviction,
+capital constraints, tax inefficiency, or timing. Be specific.
+
+| Opportunity | Existing Exposure | Reason Not Actioned |
+|-------------|-------------------|---------------------|
+
+#### Regime Loser Exposure Check
+
+Every loser from the Top 5 Losers table must be cross-referenced against
+the current portfolio. This ensures losers held in the portfolio are
+either actioned or explicitly justified.
+
+**Held losers requiring action:** If the portfolio holds a position in
+a flagged loser sector/asset, and a recommendation above addresses it,
+reference the recommendation:
+
+| Loser | Portfolio Position(s) | Exposure (% Liq NAV) | Rec # | Action |
+|-------|-----------------------|----------------------|-------|--------|
+
+**Held losers — no action needed:** If the portfolio holds exposure to a
+flagged loser but no action is warranted, explain why. Valid reasons
+include: position is small enough to be immaterial, the position serves
+a different strategic purpose (e.g. dividend income, hedge), the loser
+flag is sector-wide but this specific name is an exception, or the
+position has tax reasons to hold.
+
+| Loser | Portfolio Position(s) | Exposure (% Liq NAV) | Reason No Action |
+|-------|-----------------------|----------------------|------------------|
+
+**No exposure:** List any losers where the portfolio has zero exposure
+(confirmation that we are not exposed).
+
 #### New Opportunity Overlap Assessment (if available)
 
-After presenting all recommendations and before the Action Plan, show
-which new opportunities from the Opportunity Landscape overlap with
+Show which new opportunities from the Opportunity Landscape overlap with
 existing holdings. This contextualises the [OPPORTUNITY-SCORER]
-recommendations above and informs the action plan below.
+recommendations and informs the action plan below.
 
 | Opportunity | Overlaps With | Overlap Type | Assessment |
 |-------------|---------------|--------------|------------|

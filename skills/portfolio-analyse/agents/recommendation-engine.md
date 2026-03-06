@@ -205,6 +205,36 @@ rationale, and cost analysis accordingly. Note the optimization in the
 recommendation text: "Implementation note: [explanation of why this
 instrument was chosen over the naive alternative]."
 
+### 1.6. Regime Opportunity & Loser Coverage
+
+After finalising recommendations, cross-reference them against the
+opportunity-scorer's outputs to ensure nothing is silently dropped.
+
+**Regime Opportunity Coverage:**
+1. List every opportunity from the Opportunity Landscape (the full
+   opportunity table, not just the top 5).
+2. For each: did it result in a recommendation? If yes, reference the
+   rec number. If no, state the specific reason (already exposed,
+   capital constraints, overlap/redundancy, insufficient conviction,
+   tax inefficiency, timing, or concentration cap breach).
+3. Present as two tables: "Actioned" and "Not Actioned" per the
+   output template.
+
+**Regime Loser Exposure Check:**
+1. List every loser from the Top 5 Losers table.
+2. For each: does the portfolio hold any positions in this sector/asset?
+   Check at both the individual position level and the sector level.
+3. If held AND a recommendation addresses it (trim/exit): reference the
+   rec number. If held BUT no action recommended: explain why (position
+   is immaterial, serves a different purpose, specific name is an
+   exception to the sector-wide flag, tax reasons to hold).
+4. If not held: note "No exposure" as confirmation.
+5. Present as tables per the output template.
+
+This step ensures the analysis is fully closed-loop: every signal
+(opportunity or risk) is tied back to a portfolio action or explicit
+rationale for inaction.
+
 ### 2. Steelman Check
 For the top 3 recommendations:
 - What is the strongest case against this recommendation?
@@ -514,7 +544,15 @@ the output-template.md requirements:
     Allocation by Geography, Top 10 Positions, Concentration Flags, and
     Full Position List (in that order). Full Position List includes
     off-platform positions and is sorted by market value.
-19. Abbreviation and label footnotes: every table or paragraph that
+19. Regime Opportunity Coverage present: every opportunity from the
+    Opportunity Landscape is listed as either "Actioned" (with rec #)
+    or "Not Actioned" (with specific reason). No opportunity silently
+    dropped.
+20. Regime Loser Exposure Check present: every loser from Top 5 Losers
+    is cross-referenced against portfolio. Held losers are either
+    actioned (with rec #) or justified. Non-held losers confirmed as
+    "No exposure."
+21. Abbreviation and label footnotes: every table or paragraph that
     introduces a bracket label (e.g. `[GEO]`, `[RV]`, `[INTEL]`,
     `[USD_DET]`, `[IMPACT-DRIVEN]`, `[OPPORTUNITY-SCORER]`, `[LIVE]`,
     `[ESTIMATED]`, `[FACT]`, `[INFERENCE]`) or financial abbreviation
