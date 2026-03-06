@@ -286,6 +286,34 @@ For immediate-execution recommendations, group them in a single line:
 This unified section replaces the old separate Action Summary Table and
 Staged Deployment Plan sections. Do NOT create separate sections for these.
 
+**Inter-Account Cash Rebalance:**
+
+Determine whether each account has enough cash to fund its recommendations.
+Compare available cash per account against capital required per account.
+
+| Account | Available Cash (USD) | Capital Required (USD) | Surplus / Shortfall (USD) |
+|---------|---------------------|----------------------|--------------------------|
+
+If any account has a shortfall:
+
+| Transfer | From Account | To Account | Amount (USD) | Method | Timing |
+|----------|-------------|------------|-------------|--------|--------|
+
+Where:
+- Method: "Internal transfer" (between IB accounts), "Wire transfer"
+  (off-platform to IB), or "IB withdrawal + deposit" (between IB
+  accounts at different brokers if applicable)
+- Timing: "Before Week 1 trades" or "Before Week N trades" (aligned
+  with the deployment schedule)
+
+Notes:
+- Account for proceeds from TRIM/EXIT recommendations that free cash
+  within the same account (these reduce the shortfall).
+- If recommendations span multiple currencies, note any FX conversion
+  needed and which account should hold the converted currency.
+- If all accounts have sufficient cash: state "No inter-account
+  transfers required."
+
 ### Steelman Check
 For the top 3 recommendations, present the counter-case.
 

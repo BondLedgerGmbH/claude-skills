@@ -402,6 +402,29 @@ larger positions = more tranches).
 For immediate-execution recommendations, group them in one line:
 "Recommendations N, M, K: execute immediately at market open."
 
+**Inter-Account Cash Rebalance:**
+
+After the deployment schedule, calculate whether each account has
+sufficient cash to fund its assigned recommendations.
+
+1. For each account: sum the capital required by all recommendations
+   targeting that account (from the Action Summary Table).
+2. For each account: determine available cash. Start with current
+   uninvested cash from the portfolio JSON. Add proceeds from any
+   TRIM/EXIT recommendations in the same account. Subtract capital
+   needed for ADD/REBALANCE recommendations in the same account.
+3. If any account has a shortfall: specify the transfer needed.
+   - Amount, source account, destination account
+   - Method: "Internal transfer" (between IB sub-accounts),
+     "Wire transfer" (off-platform to IB), or similar
+   - Timing: aligned with the deployment schedule (transfer must
+     complete before the relevant tranche)
+4. If recommendations involve multiple currencies: note FX conversion
+   needs (e.g., "Convert $X USD to EUR in Personal account before
+   buying XEON").
+5. If all accounts have sufficient cash: "No inter-account transfers
+   required."
+
 ### 5. Watchlist
 Flag positions or macro indicators to monitor over next 6-12 months:
 - Earnings dates or catalysts for held positions
@@ -552,7 +575,11 @@ the output-template.md requirements:
     is cross-referenced against portfolio. Held losers are either
     actioned (with rec #) or justified. Non-held losers confirmed as
     "No exposure."
-21. Abbreviation and label footnotes: every table or paragraph that
+21. Inter-Account Cash Rebalance present in Action Plan: per-account
+    cash balance table (available vs required), transfer instructions
+    if any shortfall, FX conversion notes if multi-currency. If no
+    transfers needed, explicitly states so.
+22. Abbreviation and label footnotes: every table or paragraph that
     introduces a bracket label (e.g. `[GEO]`, `[RV]`, `[INTEL]`,
     `[USD_DET]`, `[IMPACT-DRIVEN]`, `[OPPORTUNITY-SCORER]`, `[LIVE]`,
     `[ESTIMATED]`, `[FACT]`, `[INFERENCE]`) or financial abbreviation
