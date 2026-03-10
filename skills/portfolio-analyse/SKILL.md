@@ -37,10 +37,10 @@ INTERMEDIATE_FILE_MAX_AGE_DAYS = 7
 RESEARCH_CACHE_MAX_AGE_HOURS = 24
 MAX_ESCALATION_RETRIES = 1
 DATA_QUALITY_UNAVAILABLE_THRESHOLD_PCT = 20
-PROJECT_DIR = [YOUR_PROJECT_DIR]
-OUTPUT_DIR = [YOUR_PROJECT_DIR]/output/ib-analysis
-SKILL_DIR = [YOUR_PROJECT_DIR]/.claude/skills/portfolio-analyse
-AGENTS_DIR = [YOUR_PROJECT_DIR]/.claude/agents
+PROJECT_DIR = <your-project-directory>
+OUTPUT_DIR = <your-project-directory>/output/ib-analysis
+SKILL_DIR = <your-project-directory>/.claude/skills/portfolio-analyse
+AGENTS_DIR = <your-project-directory>/.claude/agents
 ```
 
 ## Output Directory Structure
@@ -145,7 +145,7 @@ After obtaining the IB portfolio snapshot (fresh or cached), merge off-platform 
    - `REAL_ESTATE_PRIMARY`: asset_class `REAL_ESTATE`, sector `Real Estate`, liquidity `illiquid`
    - `REAL_ESTATE_INVESTMENT`: asset_class `REAL_ESTATE`, sector `Real Estate`, liquidity `illiquid`
 
-   For real estate: use the values from investor-context.md directly (no spot price needed). Tax treatment for real estate: per investor-context.md (local private real estate rules).
+   For real estate: use the values from investor-context.md directly (no spot price needed). Tax treatment for real estate: `no_capital_gains_tax` (Swiss private real estate).
 
 4. **Add `off_platform` entry to `balances`:**
    ```json
@@ -162,7 +162,7 @@ After obtaining the IB portfolio snapshot (fresh or cached), merge off-platform 
 
 5. **Update `combined` balances:**
    - Add `ib_nav`: original `total_nav` (IB-only)
-   - Add `off_platform_liquid_nav`: sum of off-platform liquid positions (precious metals + crypto + private equity options)
+   - Add `off_platform_liquid_nav`: sum of off-platform liquid positions (precious metals + crypto + Payward options)
    - Add `liquid_nav`: `ib_nav` + `off_platform_liquid_nav`
    - Add `illiquid_nav`: sum of real estate values
    - Add `total_wealth`: `liquid_nav` + `illiquid_nav`
@@ -338,7 +338,7 @@ After completion:
 
 ### Step 7.5: Fetch Hedging Market Data
 
-After the impact-analyst completes and before dispatching the recommendation-engine, fetch live options and market data for hedging instruments. This data enables the recommendation-engine to build a precise Hedge Playbook with real pricing.
+After the impact-analyst completes and before dispatching the recommendation-engine, fetch live options and market data for hedging instruments. This data enables the recommendation-engine to build a precise hedge strategies with real pricing.
 
 **7.5.1: Determine the hedging universe**
 
@@ -454,10 +454,10 @@ Save to `OUTPUT_DIR/3-hedge-data/hedge-data-{YYYY-MM-DD-HH-MM-SS}.json` with `ch
 
 **7.5.6: Error handling**
 
-- If IB gateway is not authenticated: skip Step 7.5 entirely. Set `hedge_data_path` to null. Log: "Hedge data unavailable: gateway not authenticated. Hedge Playbook will use estimated data." The recommendation-engine will fall back to WebSearch-based estimates.
+- If IB gateway is not authenticated: skip Step 7.5 entirely. Set `hedge_data_path` to null. Log: "Hedge data unavailable: gateway not authenticated. hedge strategies will use estimated data." The recommendation-engine will fall back to WebSearch-based estimates.
 - If individual option chains fail: continue with available data. Note failures in `data_quality`.
 - If VIX snapshot fails: note in data_quality, recommendation-engine will fetch via WebSearch.
-- If all option chains fail: save the JSON with empty `option_chains`. The recommendation-engine's Hedge Playbook will note "live options data unavailable" and use directional estimates.
+- If all option chains fail: save the JSON with empty `option_chains`. The recommendation-engine's hedge strategies will note "live options data unavailable" and use directional estimates.
 
 ### Step 8: Dispatch Subagent 4 - Recommendation Engine
 
@@ -492,7 +492,7 @@ After completion:
 ### Step 8.5: Escalation Check
 
 Read the recommendation-engine output file from Step 8.
-Find the `## Escalation Flags` section.
+Find the Escalation Flags section (located in the Appendix).
 
 **If "No escalation flags triggered":** proceed to Step 9.
 

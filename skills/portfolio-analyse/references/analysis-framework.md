@@ -8,7 +8,7 @@
      - Step 0:   market-researcher
      - Step 0.5: opportunity-scorer
      - Steps 1-5: impact-analyst
-     - Steps 6-13: recommendation-engine (incl. 8.5 Hedge Playbook) -->
+     - Steps 6-13: recommendation-engine (incl. integrated hedging) -->
 
 # Analysis Framework
 
@@ -47,7 +47,7 @@ a calculated position size:
 
 - **Liquid NAV:** Pre-computed in the portfolio-summary JSON as
   `combined.liquid_nav`. This includes IB NAV + off-platform liquid assets
-  (precious metals at spot, crypto at spot, [COMPANY_NAME] options at FMV).
+  (precious metals at spot, crypto at spot, Payward options at FMV).
   Real estate is excluded (illiquid). Use this value directly; do not
   calculate manually from investor-context.md.
 
@@ -85,7 +85,7 @@ these standard asset classes and sub-classes:
 | Cash & Cash Equivalents | Money market funds, Uninvested cash | Money market ETFs (XEON, CSH2), uninvested cash balances from `balances.{account}.cash` |
 | Commodities | Physical gold, Physical silver | Off-platform precious metals |
 | Cryptocurrency | BTC, other | Off-platform crypto holdings |
-| Private Equity | Stock options | Off-platform private equity ([COMPANY_NAME] options, etc.) |
+| Private Equity | Stock options | Off-platform private equity (Payward options, etc.) |
 | Real Estate *(illiquid)* | Primary residence, Investment property | Off-platform real estate |
 
 **Cash & Cash Equivalents**: this class equals the sum of uninvested cash
@@ -129,11 +129,11 @@ allocation table. The sum of each table must equal the portfolio total.
     real yields and risk appetite)
   - Bitcoin forms a crypto/volatility cluster (correlated with risk
     appetite and liquidity conditions, partially correlated with tech)
-  - [COMPANY_NAME] options have fintech/crypto sector correlation
+  - Payward options have fintech/crypto sector correlation
 - Flag indirect exposures (e.g., ETFs with heavy NVDA weighting,
   cloud providers dependent on AI capex)
 - Assess USD concentration across all holdings including off-platform
-  (precious metals quoted in USD, Bitcoin in USD, [COMPANY_NAME] in USD)
+  (precious metals quoted in USD, Bitcoin in USD, Payward in USD)
 
 ### 2.5. New Opportunity Overlap Assessment
 For each opportunity from the opportunity-scorer, check against existing
@@ -155,7 +155,7 @@ For each relevant position or cluster:
 ### 4. Currency Exposure Analysis
 - Total USD exposure (direct + indirect). Off-platform assets are
   USD-denominated in the portfolio JSON (precious metals and crypto
-  are globally priced in USD, [COMPANY_NAME] is a US company). Include them
+  are globally priced in USD, Payward is a US company). Include them
   in USD totals. Real estate is in local currency (CHF).
 - CHF, EUR, and other currency exposures
 - Recommended target allocation aligned with USD thesis
@@ -171,6 +171,26 @@ Evaluate exposure across five dimensions:
   counterparty exposure to US financial system
 
 ### 6. Recommendations
+
+**Closed-capital constraint.** All recommendations must be funded
+exclusively from capital visible in the portfolio: IB account cash
+balances, proceeds from TRIM/EXIT recommendations, or inter-account
+transfers between IB accounts. No external savings, bank transfers,
+or new capital injections may be assumed. Off-platform ADD
+recommendations must be funded by an explicit transfer from an IB
+account (with the transfer amount, source account, and timing stated
+in the Inter-Account Cash Rebalance section). **Capital allocation is
+conviction-driven.** If insufficient cash exists to fund a new
+recommendation at its ideal size, do NOT simply downsize or deprioritise
+it. Instead, identify existing positions with lower conviction or lower
+potential — across all accounts, asset classes, and geographies — and
+generate TRIM/EXIT recommendations to free the required capital. A
+higher-conviction, higher-potential new position should displace a
+lower-conviction existing position regardless of which account, asset
+class, or currency it sits in. Only reduce the size of a new
+recommendation as a last resort when no existing position can
+reasonably be trimmed or exited to fund it.
+
 For each recommendation:
 - Source tag: [IMPACT-DRIVEN] or [OPPORTUNITY-SCORER]
 - Action: [TRIM], [EXIT], [ADD], [REBALANCE], [HEDGE]
@@ -190,7 +210,7 @@ For each recommendation:
 - Tax note:
   - Personal account: no capital gains tax; flag dividend withholding if relevant
   - Corporate account: corporate tax impact; participation exemption eligibility
-  - Off-platform: apply personal tax treatment (local private investor rules)
+  - Off-platform: apply personal tax treatment (Swiss private investor rules)
     unless the asset is held in a corporate structure
 - Tradeoff: what you give up by taking this action
 - Priority: High / Medium / Low
@@ -207,7 +227,7 @@ position-level drawdown estimates, portfolio-level drawdown, top
 contributors to loss and protection. Flag if any scenario breaches
 escalation thresholds (>25% drawdown or >5% single-position contribution).
 
-### 8.5. Hedge Playbook
+### 8.5. Integrated Hedge Strategies
 Using the live option chain and market data from the orchestrator
 (hedge-data JSON), design concrete hedge strategies for each stress
 scenario from Step 8. For each scenario: identify hedgeable exposure,
@@ -215,16 +235,21 @@ select the best-fit instrument (put options, inverse ETFs, safe havens,
 or collars), calculate hedge size from delta and exposure at risk,
 calculate annualized cost from option premium or ETF expense ratio,
 determine activation mode (carry as insurance / deploy on trigger /
-scale in), and explain why this specific hedge was chosen. Produce
-a per-scenario hedge table and a hedge portfolio summary with overlap
-analysis, consolidated cost, cost-efficiency ranking, and minimum
-viable hedge recommendation. When hedge data is unavailable, fall back
-to directional estimates using VIX-based approximations and mark all
-figures as [ESTIMATED].
+scale in), and explain why this specific hedge was chosen. All hedges
+are consolidated into a single Hedge Summary table (analogous to the
+Recommendations Summary table) that opens the Stress Testing & Hedging
+section. Per-scenario output references hedge numbers (H1, H2, ...)
+from that summary table. Includes overlap analysis, consolidated cost,
+cost-efficiency ranking, and minimum viable hedge recommendation.
+When hedge data is unavailable, fall back to directional estimates
+using VIX-based approximations and mark all figures as [ESTIMATED].
 
-### 9. Staged Deployment Plan
-For ADD/REBALANCE recommendations above 1% liquid NAV: deploy over
-2-6 weeks in tranches with entry conditions and abort triggers.
+### 9. Recommendations Summary Table
+Build the merged summary table that opens the Recommendations section
+in the final report. This table combines action summary and deployment
+schedule into one: each recommendation occupies one row if immediate,
+or multiple rows (one per tranche) if staged. Includes inter-account
+cash rebalance calculation.
 
 ### 10. Watchlist
 Flag positions or macro indicators to monitor over next 6-12 months:

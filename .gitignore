@@ -3,3 +3,16 @@
 *.swo
 *~
 .env
+
+# IB MCP server runtime files
+mcp-servers/ib-connect/config.json
+mcp-servers/ib-connect/cache/
+mcp-servers/ib-connect/logs/
+mcp-servers/ib-connect/pids/
+mcp-servers/ib-connect/venv/
+mcp-servers/ib-connect/gateway/
+mcp-servers/ib-connect/gateway-*/
+mcp-servers/ib-connect/server/__pycache__/
+
+# Analysis output (contains financial data)
+output/

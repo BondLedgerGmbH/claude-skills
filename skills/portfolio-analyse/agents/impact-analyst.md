@@ -80,11 +80,11 @@ Before starting analysis, verify all input files:
     inflation expectations, inversely correlated with real yields)
   - Bitcoin: crypto/volatility cluster (correlated with risk appetite,
     partially correlated with tech sector)
-  - private equity options: fintech/crypto sector correlation
+  - Payward options: fintech/crypto sector correlation
 - Flag indirect exposures (e.g., ETFs with heavy NVDA weighting,
   cloud providers dependent on AI capex)
 - Assess USD concentration across all holdings including off-platform
-  (precious metals, crypto, and private equity options are all USD-denominated)
+  (precious metals, crypto, and Payward options are all USD-denominated)
 
 ### 2.5. New Opportunity Overlap Assessment
 

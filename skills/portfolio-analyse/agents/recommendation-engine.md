@@ -2,10 +2,10 @@
 name: recommendation-engine
 description: >
   Generates investment recommendations from impact analysis and opportunity
-  scoring. Produces position-sized recommendations, stress testing, staged
-  deployment plans, steelman checks, monitoring framework, watchlist,
-  delta analysis, and escalation flags. Formats the final portfolio
-  analysis output.
+  scoring. Produces position-sized recommendations with merged summary
+  table, integrated stress testing and hedging, and all appendix sections
+  (steelman, monitoring, watchlist, delta analysis, escalation flags).
+  Formats the final portfolio analysis output.
 tools: Read, Write, Glob
 model: opus
 ---
@@ -73,7 +73,7 @@ Before generating recommendations, verify all input files:
 7. Read hedge-data-{timestamp}.json (if provided). Confirm it parses
    as valid JSON with `option_chains` and `inverse_etfs` keys. Check
    `data_quality` for any failed chains or snapshots. If file is
-   missing or not provided: WARN. Hedge Playbook will use directional
+   missing or not provided: WARN. Hedge strategies will use directional
    estimates instead of live data. If present but partially degraded:
    use available data, note gaps per chain.
 8. Previous analysis file is optional. If provided, verify it is
@@ -105,7 +105,7 @@ a calculated position size using this methodology:
 **Liquid NAV calculation:**
 - Pre-computed in the portfolio-summary JSON as `combined.liquid_nav`.
   This includes IB NAV + off-platform liquid assets (precious metals at spot,
-  crypto at spot, private equity options at FMV). Real estate is excluded (illiquid).
+  crypto at spot, Payward options at FMV). Real estate is excluded (illiquid).
   Use this value directly; do not calculate manually.
 
 State the formula and the resulting size explicitly in each recommendation
@@ -128,7 +128,33 @@ or `CAUTION` (with explicit justification for CAUTION items). Drop
 `REDUNDANT` opportunities unless there is a compelling reason to add
 exposure despite the overlap.
 
+**Closed-capital constraint.** All recommendations must be funded
+exclusively from capital visible in the portfolio: IB account cash
+balances, proceeds from TRIM/EXIT recommendations, or inter-account
+transfers between IB accounts. No external savings, bank transfers,
+or new capital injections may be assumed. Off-platform ADD
+recommendations (e.g., buying physical gold) must be funded by an
+explicit transfer from an IB account, with the transfer amount,
+source account, and timing stated in the Inter-Account Cash Rebalance
+section. **Capital allocation is conviction-driven.** If insufficient
+cash exists to fund a new recommendation at its ideal size, do NOT
+simply downsize or deprioritise it. Instead, identify existing
+positions with lower conviction or lower potential and generate
+TRIM/EXIT recommendations to free the required capital. A higher-
+conviction, higher-potential new position should displace a lower-
+conviction existing position — that is the entire point of active
+portfolio management. Only reduce the size of a new recommendation
+as a last resort when no existing position can reasonably be trimmed
+or exited to fund it.
+
+Sort recommendations by execution urgency: earliest Execute week first,
+then by priority (High > Medium > Low) within the same week. This order
+applies to both the summary table and the detail blocks below.
+
 For each recommendation:
+- Execution timing: calendar week and urgency context (e.g.
+  "**Execute: CW11 (Immediate)** — execute at next market open" or
+  "**Execute: CW13** — deploy after confirming oil stays above $95")
 - Source tag: `[IMPACT-DRIVEN]` or `[OPPORTUNITY-SCORER]`
 - Action: `[TRIM]`, `[EXIT]`, `[ADD]`, `[REBALANCE]`, `[HEDGE]`
 - Strategic intent: `[RISK MITIGATION]`, `[GROWTH OPTIMIZATION]`, `[USD HEDGE]`
@@ -151,7 +177,7 @@ For each recommendation:
 - Tax note:
   - Personal account: no capital gains tax; flag dividend withholding if relevant
   - Corporate account: corporate tax impact; participation exemption eligibility
-  - Off-platform: apply personal tax treatment (local tax rules)
+  - Off-platform: apply personal tax treatment (Swiss private investor rules)
     unless the asset is held in a corporate structure
 - Tradeoff: what you give up by taking this action
 - Priority: High / Medium / Low
@@ -245,7 +271,7 @@ For the top 3 recommendations:
 
 Stress scenarios with integrated hedge strategies. Each scenario shows
 the portfolio impact AND the specific hedges to protect against it.
-There is no separate Hedge Playbook section.
+There is no separate hedge section outside of Stress Testing & Hedging.
 
 **Important:** Stress test the recommended portfolio (current holdings +
 all recommended changes from Steps 1-1.5 applied). This ensures hedges
@@ -326,32 +352,34 @@ Design a concrete hedge using the hedge data from the orchestrator.
    Consider whether recommended positions (from Step 1) already provide
    natural hedging for this scenario before adding paid hedges.
 
-Hedge recommendation table per scenario:
+For each hedge designed, record all fields needed for the Hedge Summary
+table (Step 5): instrument, type, strike/level, expiry, delta,
+contracts/shares, notional, size, cost, annualized cost, activation mode,
+drawdown offset, data source label (`[LIVE]` or `[ESTIMATED]`), and which
+scenario(s) it covers. Assign sequential hedge numbers (H1, H2, ...).
 
-| # | Instrument | Type | Strike/Level | Expiry | Delta | Contracts/Shares | Notional (USD) | Size (% Liq NAV) | Cost (USD) | Ann. Cost (%) | Activation | Drawdown Offset (%) |
-
-Data source label per hedge: `[LIVE]` or `[ESTIMATED]`
+Do NOT produce a separate per-scenario hedge table in the output. The
+per-scenario output references hedge numbers from the Hedge Summary table
+and provides per-hedge rationale only (2-3 sentences each). The single
+Hedge Summary table (built in Step 5) is the only hedge table in the
+report.
 
 If a hedge instrument provides protection across multiple scenarios,
-note this: "Also covers Scenario N" with a brief explanation.
+assign it to its primary scenario and note cross-coverage inline.
 
-**3.3: Hedge Portfolio Summary**
+**3.3: Hedge Consolidation Analysis**
 
-After all scenarios, produce a consolidated view:
+After designing hedges for all scenarios, analyse the combined hedge set:
 
-**Overlap analysis:** Which hedges cover multiple scenarios. Group them.
-
-**Consolidated hedge portfolio:**
-- Total annual carry cost (USD and % of liquid NAV)
-- Total notional protection
-- Overlap-adjusted cost (removing redundant hedges)
-
-**Cost-efficiency ranking:**
-
-| Rank | Instrument | Ann. Cost (%) | Drawdown Offset (%) | Cost per 1% Protection | Scenarios Covered |
-
-**Minimum viable hedge:** The single most cost-efficient hedge providing
-the broadest protection. State instrument, cost, and coverage.
+- **Overlap analysis:** Which hedges cover multiple scenarios? Group them.
+  If two hedges protect overlapping exposures, flag the redundancy.
+- **Cost-efficiency ranking:** Rank all hedges by cost per 1% of drawdown
+  protection. This feeds the Hedge Cost-Efficiency table in the output.
+- **Minimum viable hedge:** Identify the single most cost-efficient hedge
+  providing the broadest protection.
+- **Consolidated costs:** Total annual carry cost, overlap-adjusted cost
+  (removing redundant hedges). These figures appear below the Hedge Summary
+  table in the output.
 
 **3.4: Fallback when hedge data is unavailable**
 
@@ -365,110 +393,111 @@ If the hedge-data JSON was not provided or is empty:
 - For inverse ETFs: use known expense ratios from the static table
 - Mark all cost figures as `[ESTIMATED]`
 
-### 4. Action Plan
+### 4. Recommendations Summary Table
 
-Combine the action summary and deployment schedule into a single
-unified section. Do NOT create separate "Action Summary Table" and
-"Staged Deployment Plan" sections.
+Build the merged summary table that opens the Recommendations section.
+This table combines action summary and deployment schedule into one.
+Each recommendation occupies one row if immediate, or multiple rows
+(one per tranche) if staged.
 
-**Action Summary Table:** One table covering all recommendations:
-
-| # | Action | Ticker/Asset | Account | From (Fund Source) | To (Target Instrument) | Amount (USD) | Size (% Liq NAV) | Deployment | Source | Priority |
+| # | Action | Ticker/Asset | Account | From | To | Amount (USD) | Size (% Liq NAV) | Execute | Entry Condition | Source | Priority |
 
 Column definitions:
 - From: where capital comes from ("Cash", "USD cash", "EUR cash", "Proceeds from Rec N", or the position being sold)
 - To: the specific instrument being bought ("Cash" for sells, or target ticker)
-- Deployment: "Immediate" or "Staged: N weeks"
+- Amount: tranche amount for staged, full amount for immediate
+- Size: tranche size for staged, full size for immediate
+- Execute: absolute calendar week in ISO format "CW{nn}" (e.g. "CW11", "CW12"). For immediate-execution trades, use the current calendar week. For staged tranches, use the specific calendar week for each tranche. Never use relative labels like "Week 1", "Week 2".
+- Entry Condition: "Market open" for immediate, or price/macro/time condition for staged
+
+**Sorting and numbering:** The summary table and the Recommendation
+Details section are both sorted by execution urgency: earliest Execute
+week first, then by priority (High > Medium > Low) within the same
+week. **Recommendation numbers (#) must be assigned sequentially in
+this sorted order** — Rec 1 is the most urgent, Rec 2 is next, etc.
+Do NOT assign numbers by source type or any other grouping and then
+re-sort; the numbering itself must reflect urgency order.
 
 Below the table: total new capital deployed, total capital freed,
 net cash flow, post-trade cash position (USD and % of liquid NAV).
 
-**Deployment Schedule:** For each staged recommendation (above 1%
-liquid NAV), include its tranche table directly below the summary:
+For each staged recommendation, show abort conditions:
+- **Rec N abort:** [specific conditions for cancelling remaining tranches]
 
-**Rec N: [Ticker] ($[Amount])**
-
-| Week | Action | Instrument | Tranche (%) | Amount | Entry Condition |
-
-- Entry conditions per tranche: price level, macro confirmation signal,
-  technical support level, or time-based (deploy regardless)
-- Abort conditions: what would cause cancellation of remaining tranches
-  (e.g., "regime probability shifts to >50% Contraction", "position
-  drops >10% from initial entry")
-
-Deploy over 2-6 weeks in tranches (proportional to position size:
-larger positions = more tranches).
-
-For immediate-execution recommendations, group them in one line:
+For immediate-execution recommendations, group them:
 "Recommendations N, M, K: execute immediately at market open."
+
+Deploy staged recommendations over 2-6 weeks in tranches (proportional
+to position size: larger positions = more tranches).
 
 **Inter-Account Cash Rebalance:**
 
-After the deployment schedule, calculate whether each account has
-sufficient cash to fund its assigned recommendations.
+After the summary, calculate whether each account has sufficient cash
+to fund its assigned recommendations. This enforces the closed-capital
+constraint: every dollar deployed must come from an identified source
+within the portfolio.
 
-1. For each account: sum the capital required by all recommendations
-   targeting that account (from the Action Summary Table).
+1. For each account (including off_platform): sum the capital required
+   by all recommendations targeting that account (from the Summary table).
 2. For each account: determine available cash. Start with current
    uninvested cash from the portfolio JSON. Add proceeds from any
    TRIM/EXIT recommendations in the same account. Subtract capital
    needed for ADD/REBALANCE recommendations in the same account.
-3. If any account has a shortfall: specify the transfer needed.
+3. Off-platform ADD recommendations (e.g., buying physical gold or
+   silver) require a withdrawal from an IB account. Include these in
+   the IB account's capital outflow. The rebalance table must show the
+   IB account withdrawal and off-platform purchase as linked entries.
+4. If any account has a shortfall: specify the transfer needed.
    - Amount, source account, destination account
    - Method: "Internal transfer" (between IB sub-accounts),
-     "Wire transfer" (off-platform to IB), or similar
+     "IB withdrawal to off-platform" (for off-platform purchases),
+     or similar
    - Timing: aligned with the deployment schedule (transfer must
      complete before the relevant tranche)
-4. If recommendations involve multiple currencies: note FX conversion
+5. If recommendations involve multiple currencies: note FX conversion
    needs (e.g., "Convert $X USD to EUR in Personal account before
    buying XEON").
-5. If all accounts have sufficient cash: "No inter-account transfers
+6. If all accounts have sufficient cash: "No inter-account transfers
    required."
 
-### 5. Watchlist
-Flag positions or macro indicators to monitor over next 6-12 months:
-- Earnings dates or catalysts for held positions
-- Policy developments (Fed, ECB, SNB, fiscal)
-- Signals that would cause revision of standing theses
+### 5. Hedge Summary Table
 
-### 6. Monitoring Framework
+Using the hedge data collected in Step 3.2 and the consolidation analysis
+from Step 3.3, build the Hedge Summary table that opens the Stress Testing
+& Hedging section. This table lists ALL hedge instruments across all
+scenarios in one place, similar to how the Recommendations Summary table
+lists all trade actions.
 
-Three-tier monitoring schedule:
+| # | Scenario | Instrument | Type | Strike/Level | Expiry | Delta | Contracts/Shares | Notional (USD) | Size (% Liq NAV) | Cost (USD) | Ann. Cost (%) | Activation | Drawdown Offset (%) | Data Source |
 
-**Monthly macro review:**
-- Regime probability table: which variables to re-check to confirm
-  or revise the current regime classification
-- Credit cycle phase: which signals to watch for phase transition
-- Standing thesis validation: for each standing thesis in
-  investor-context.md, list the data point that would strengthen
-  or weaken the thesis
-- Trigger for full pipeline re-run: specify the condition (e.g.,
-  "regime probability shifts by >20 percentage points", "credit cycle
-  transitions to next phase")
+Below the table: total annual carry cost, overlap-adjusted cost, and
+minimum viable hedge (all from Step 3.3 consolidation analysis).
 
-**Weekly position review:**
-- For each held position (existing + newly recommended): one key metric
-  to watch and the threshold that triggers reassessment
-- Format: Position | Metric | Current Value | Reassessment Threshold
+The output document then shows: Hedge Summary table, Volatility Regime
+Context (from Step 3.1), per-scenario detail (impact tables + hedge
+rationale referencing H# numbers, from Step 3.2), and finally the
+Hedge Cost-Efficiency ranking (from Step 3.3).
 
-**Regime shift signals:**
-- List 3-5 specific signals that would indicate a regime shift is underway
-- For each: the data point, current value, threshold for concern,
-  and recommended portfolio action if triggered
-- Format: Signal | Current | Threshold | Action
+### 6. Appendix Sections
+
+Produce the following sections for the Appendix (all are demoted from
+their previous main-body positions):
+
+- **Global Market Context: Detailed Findings** (seven research sections)
+- **Opportunity Landscape** (opportunities, losers, geo expressions, pair trades)
+- **Impact & Risk Assessment** (thesis/market impact, position matrix, risk dimensions)
+- **Steelman Check** (counter-case for top 3 recommendations)
+- **Watchlist** (positions/indicators to monitor with trigger conditions)
+- **Monitoring Framework** (monthly macro, weekly position, regime shift signals)
+- **Previous Analysis Delta** (if prior analysis exists)
+- **Escalation Flags** (threshold breaches and re-run recommendations)
 
 ### 7. Comparison Mode Extras (if applicable)
 - Hedged recommendations: actions that reduce risk under both scenarios,
   plus conditional recommendations tied to specific outcomes
 - Decision triggers: signals that would confirm one source over the other
 
-### 8. Previous Analysis Delta (if prior analysis exists)
-- What changed in the portfolio since last analysis
-- Which previous recommendations were acted on
-- Which previous watchlist items triggered
-- Updated assessment of standing theses based on new data
-
-### 9. Escalation Flags
+### 8. Escalation Flags
 
 This is the final analysis section. It is consumed by the orchestrator
 to decide whether to re-dispatch upstream subagents.
@@ -499,9 +528,27 @@ Escalation flag types:
 ## Output
 Format the complete analysis per the output-template.md structure.
 Write to the file path provided by the orchestrator.
-Include all required sections. The Global Market Context (with Executive
-Summary) and Impact & Risk Assessment sections should be incorporated
-from the earlier subagent outputs.
+
+The report is front-loaded for action. Main body section order:
+1. Header
+2. Portfolio Snapshot
+3. Global Market Context (Executive Summary only)
+4. Key Takeaways
+5. Recommendations (Summary table first, then details, coverage checks, cash rebalance)
+6. Stress Testing & Hedging (Hedge Summary table first, then scenarios, cost-efficiency)
+7. Comparison Analysis + Decision Triggers (Mode 4 only)
+
+All supporting analysis goes in the Appendix:
+- Global Market Context: Detailed Findings
+- Opportunity Landscape
+- Impact & Risk Assessment
+- Steelman Check
+- Watchlist
+- Monitoring Framework
+- Previous Analysis Delta
+- Escalation Flags
+- Allocation tables (Sector, Currency, Geography)
+- Top 10 Positions, Concentration Flags, Full Position List
 
 ## Output Validation
 Before reporting completion, re-read the output file and verify against
@@ -515,71 +562,82 @@ the output-template.md requirements:
    uninvested cash + money market funds. No separate off-platform holdings
    table (all integrated into allocation). Sector, currency, geography,
    top 10 positions, and concentration flags are in the Appendix, NOT here.
-3. Global Market Context section is present with: Executive Summary
-   (plain-language 2-3 paragraph overview) followed by Detailed Findings
-   (structured by seven research sections). Content sourced from research cache.
-4. Impact & Risk Assessment section is present with: thesis/market impact
-   summary, position-level impact matrix, and risk dimensions (five
-   dimensions from analysis framework). No separate Risk Assessment section.
-5. Key Takeaways contains 3-5 specific insights (not generic statements)
-6. Opportunity Landscape includes both Top 5 opportunities AND Top 5 losers
-   (assets/sectors most likely to underperform in current regime)
-7. Recommendations section contains:
-   - New Opportunity Overlap Assessment table (if opportunity scoring
-     available) placed AFTER individual recommendation blocks and
-     BEFORE the Action Plan
-   - At least one recommendation (unless analysis genuinely finds no
-     action needed, in which case state this explicitly)
-   - Every recommendation has: source tag, action, ticker, account,
-     position size, strategic intent, proceeds deployment (for
-     TRIM/EXIT/REBALANCE), tax note, tradeoff, priority
-8. Implementation optimization: no recommendation uses a naked FX
-    position when a yield-bearing money market ETF in the target currency
-    is available; no recommendation ignores existing cash/money market
-    holdings in the same currency; uninvested cash >5% of liquid NAV
-    is flagged. If any optimization was missed, revise the recommendation
-    before reporting completion.
-9. Action Plan section contains a unified Action Summary Table with
-    columns: #, Action, Ticker/Asset, Account, From (Fund Source),
-    To (Target Instrument), Amount (USD), Size (% Liq NAV), Deployment,
-    Source, Priority. Every row must show where capital comes from and
-    where it goes. Followed by deployment schedules (tranche tables with
-    abort conditions) for all staged recommendations. Below the table:
-    total capital deployed, total freed, net cash flow, post-trade cash.
-    No separate "Staged Deployment Plan" section. Immediate-execution
-    recommendations grouped in one line.
-10. Steelman Check is present for top 3 recommendations
-11. Stress Testing & Hedging section present with: vol regime context,
-    at least 2 scenarios, each with BOTH position-level impact table AND
-    integrated hedge strategy (hedge table, rationale, data source labels).
-    No separate "Hedge Playbook" section exists. Hedges reference the
-    recommended portfolio (current + all recommendations applied).
-12. Hedge Portfolio Summary present after all scenarios with: overlap
-    analysis, consolidated cost, cost-efficiency ranking, minimum viable
-    hedge. Cross-scenario hedge coverage noted inline per hedge.
-13. Watchlist contains specific items with trigger conditions
-14. Monitoring Framework present with all three tiers (monthly macro,
-    weekly position, regime shift signals)
-15. If comparison mode: Comparison Analysis and Decision Triggers present
-16. If prior analysis exists: Previous Analysis Delta section is present
-17. Escalation Flags section present (even if "No escalation flags triggered")
-18. Appendix contains: Allocation by Sector, Allocation by Currency,
-    Allocation by Geography, Top 10 Positions, Concentration Flags, and
-    Full Position List (in that order). Full Position List includes
-    off-platform positions and is sorted by market value.
-19. Regime Opportunity Coverage present: every opportunity from the
+3. Global Market Context section in the main body contains ONLY the
+   Executive Summary (plain-language 2-3 paragraph overview). The Detailed
+   Findings (seven research sections) are in the Appendix. No Detailed
+   Findings in the main body.
+4. Key Takeaways contains 3-5 specific insights (not generic statements)
+5. Recommendations section structure (in order):
+   a. **Summary** table (merged action + deployment) is the FIRST
+      subsection. Each recommendation occupies one row if immediate, or
+      multiple rows (one per tranche) if staged. Columns: #, Action,
+      Ticker/Asset, Account, From, To, Amount, Size (% Liq NAV), Execute,
+      Entry Condition, Source, Priority. The Execute column uses absolute
+      ISO calendar weeks ("CW11", "CW12"), never relative labels.
+      Table is sorted by Execute week (earliest first), then by priority
+      within the same week. Followed by: cash flow totals, abort
+      conditions for staged recs, immediate-execution grouping.
+      No separate "Action Plan", "Action Summary Table", or "Deployment
+      Schedule" sections exist anywhere in the document.
+   b. Inter-Account Cash Rebalance (per-account cash table, transfers
+      if shortfall, FX notes)
+   c. Recommendation Details (individual structured blocks)
+   d. Regime Opportunity Coverage (actioned and not-actioned tables)
+   e. Regime Loser Exposure Check (held-actioned, held-no-action, no-exposure)
+   f. New Opportunity Overlap Assessment (if opportunity scoring available)
+6. Every recommendation has: source tag, action, ticker, account,
+   position size, strategic intent, proceeds deployment (for
+   TRIM/EXIT/REBALANCE), tax note, tradeoff, priority
+7. Implementation optimization: no recommendation uses a naked FX
+   position when a yield-bearing money market ETF in the target currency
+   is available; no recommendation ignores existing cash/money market
+   holdings in the same currency; uninvested cash >5% of liquid NAV
+   is flagged. If any optimization was missed, revise the recommendation
+   before reporting completion.
+8. Stress Testing & Hedging section structure (in order):
+   a. **Hedge Summary** table is the FIRST subsection. Consolidated
+      table of ALL hedge instruments across all scenarios. Columns: #,
+      Scenario, Instrument, Type, Strike/Level, Expiry, Delta,
+      Contracts/Shares, Notional, Size (% Liq NAV), Cost, Ann. Cost (%),
+      Activation, Drawdown Offset (%), Data Source. Followed by: total
+      carry cost, overlap-adjusted cost, minimum viable hedge.
+   b. Volatility Regime Context
+   c. Scenarios (min 2): each with impact table AND hedge strategy
+      referencing hedge numbers (H1, H2...) from the Hedge Summary
+   d. Hedge Cost-Efficiency ranking table
+9. No "Hedge Playbook" section exists. Hedges reference the recommended
+   portfolio (current + all recommendations applied).
+10. If comparison mode: Comparison Analysis and Decision Triggers present
+    in main body.
+11. Appendix contains (in order):
+    - Global Market Context: Detailed Findings
+    - Opportunity Landscape (Top 5 opportunities AND Top 5 losers)
+    - Impact & Risk Assessment (thesis/market impact, position matrix,
+      risk dimensions)
+    - Steelman Check (counter-case for top 3 recommendations)
+    - Watchlist (specific items with trigger conditions)
+    - Monitoring Framework (monthly macro, weekly position, regime shift)
+    - Previous Analysis Delta (if prior analysis exists)
+    - Escalation Flags (even if "No escalation flags triggered")
+    - Allocation by Sector
+    - Allocation by Currency
+    - Allocation by Geography
+    - Top 10 Positions
+    - Concentration Flags
+    - Full Position List (off-platform included, sorted by market value)
+12. Regime Opportunity Coverage present: every opportunity from the
     Opportunity Landscape is listed as either "Actioned" (with rec #)
     or "Not Actioned" (with specific reason). No opportunity silently
     dropped.
-20. Regime Loser Exposure Check present: every loser from Top 5 Losers
+13. Regime Loser Exposure Check present: every loser from Top 5 Losers
     is cross-referenced against portfolio. Held losers are either
     actioned (with rec #) or justified. Non-held losers confirmed as
     "No exposure."
-21. Inter-Account Cash Rebalance present in Action Plan: per-account
-    cash balance table (available vs required), transfer instructions
-    if any shortfall, FX conversion notes if multi-currency. If no
-    transfers needed, explicitly states so.
-22. Abbreviation and label footnotes: every table or paragraph that
+14. Inter-Account Cash Rebalance present in Recommendations section:
+    per-account cash balance table (available vs required), transfer
+    instructions if any shortfall, FX conversion notes if multi-currency.
+    If no transfers needed, explicitly states so.
+15. Abbreviation and label footnotes: every table or paragraph that
     introduces a bracket label (e.g. `[GEO]`, `[RV]`, `[INTEL]`,
     `[USD_DET]`, `[IMPACT-DRIVEN]`, `[OPPORTUNITY-SCORER]`, `[LIVE]`,
     `[ESTIMATED]`, `[FACT]`, `[INFERENCE]`) or financial abbreviation
