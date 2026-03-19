@@ -25,7 +25,7 @@ Check Claude's auto-memory files for a stored diet preference.
 
 - If found: confirm with the user. E.g. "Planning keto as usual, or switching this week?"
 - If not found: ask the user to pick from: Keto, Low-carb high-protein, Vegetarian, Custom.
-- If the user changes diet type: use the Edit tool to update the diet preference in `/Users/karolj/.claude/projects/-Users-karolj-Desktop-Claude/memory/MEMORY.md`.
+- If the user changes diet type: use the Edit tool to update the diet preference in the user's auto-memory MEMORY.md file.
 
 ### 1.2 - Gather inputs
 
@@ -65,7 +65,7 @@ Once the overview is confirmed, create two MD files.
 
 ### 2.1 - Create recipes.md
 
-**Location:** `/Users/karolj/Desktop/Claude/output/meal-plans/recipes.md`
+**Location:** `{OUTPUT_DIR}/meal-plans/recipes.md`
 
 **Structure:** Follow the template in `references/recipe-format.md` exactly. For each dinner in the confirmed overview:
 
@@ -96,7 +96,7 @@ Once the overview is confirmed, create two MD files.
 
 ### 2.2 - Create shopping-list.md
 
-**Location:** `/Users/karolj/Desktop/Claude/output/meal-plans/shopping-list.md`
+**Location:** `{OUTPUT_DIR}/meal-plans/shopping-list.md`
 
 **Structure:** Follow the template in `references/shopping-list-format.md` exactly.
 
@@ -121,8 +121,8 @@ Once the overview is confirmed, create two MD files.
 
 After both files are written, tell the user the files are ready and where they are:
 
-- `/Users/karolj/Desktop/Claude/output/meal-plans/recipes.md`
-- `/Users/karolj/Desktop/Claude/output/meal-plans/shopping-list.md`
+- `{OUTPUT_DIR}/meal-plans/recipes.md`
+- `{OUTPUT_DIR}/meal-plans/shopping-list.md`
 
 Keep the response short. The user can open and read the documents themselves.
 
@@ -183,6 +183,6 @@ If the user's request conflicts with their stored preferences (e.g. requests goa
 
 ```
 Output files:
-  /Users/karolj/Desktop/Claude/output/meal-plans/recipes.md
-  /Users/karolj/Desktop/Claude/output/meal-plans/shopping-list.md
+  {OUTPUT_DIR}/meal-plans/recipes.md
+  {OUTPUT_DIR}/meal-plans/shopping-list.md
 ```
