@@ -23,8 +23,8 @@ MCP server for Interactive Brokers Client Portal Gateway. Manages gateway lifecy
 ## Installation
 
 ```bash
-# Copy to ~/.ib-connect
-cp -r mcp-servers/ib-connect ~/.ib-connect
+# Clone to ~/.ib-connect
+git clone https://github.com/CorporateGmbH/ib-connect.git ~/.ib-connect
 
 # Create virtual environment and install dependencies
 cd ~/.ib-connect
@@ -91,6 +91,10 @@ Add to your MCP configuration:
 | `ib_portfolio_summary` | Combined view: positions + balances + allocations + concentration flags |
 | `ib_option_chain` | Filtered option chain with live pricing, IV, and greeks |
 | `ib_market_snapshot` | Market data snapshots for multiple symbols |
+| `ib_place_order` | Place buy/sell orders with quantity or cash amount |
+| `ib_order_preview` | Preview order without submitting (what-if analysis) |
+| `ib_order_status` | List live and recent orders |
+| `ib_cancel_order` | Cancel a live order |
 
 ## Known Data Limitations
 

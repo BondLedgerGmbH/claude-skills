@@ -41,9 +41,20 @@ You will receive file paths to:
   and `source: "manual"`. The `combined` balances include `liquid_nav`
   (IB + off-platform liquid) and `total_wealth` (including illiquid real estate).
   Treat off-platform positions identically to IB positions in all analysis.
-- investor-context.md (investor profile, standing theses, analyst expectations)
+- investor-context.md (investor profile, standing theses, analyst expectations,
+  Cash Policy section with target uninvested cash percentage)
 - output-template.md (required output structure)
 - Previous portfolio-analysis-*.md (if exists, for delta analysis)
+- Portfolio diff summary (from orchestrator Step 7.9; may be absent). Contains
+  structured comparison between previous and current portfolio snapshots:
+  exited positions, new positions, increased/decreased positions, cash changes.
+  When present, use this to identify already-executed trades and avoid
+  recommending actions the user has already taken.
+- Data quality status (from market research Data Quality Assessment). Either
+  `NORMAL` or `LOW-CONFIDENCE` with a list of degraded domains. When
+  `LOW-CONFIDENCE`: cap maximum conviction at Medium for new ADD
+  recommendations that depend on data from degraded domains. Note this
+  constraint in the output header and in affected recommendations.
 - Mode identifier (thesis/youtube/scan/comparison)
 
 ## Input Validation
@@ -79,6 +90,15 @@ Before generating recommendations, verify all input files:
 8. Previous analysis file is optional. If provided, verify it is
    readable and contains a Recommendations section. If malformed:
    WARN and skip delta analysis rather than failing.
+9. Portfolio diff summary (if provided): verify it contains at least
+   one of: exited positions, new positions, position changes, or cash
+   changes. If present, cross-reference against any TRIM/EXIT/ADD
+   recommendations you generate — do not recommend actions that have
+   already been executed (e.g., do not recommend EXIT on a position
+   that appears in the "exited positions" list).
+10. Data quality status (if provided): verify it is either "NORMAL"
+    or "LOW-CONFIDENCE". If LOW-CONFIDENCE, note the degraded domains
+    and apply the conviction cap to relevant recommendations.
 
 ## Position Sizing Methodology
 
@@ -102,6 +122,10 @@ a calculated position size using this methodology:
 - If the impact-analyst's prospective concentration analysis flags
   a breach, reduce the position size to stay within the cap
 
+**Data quality cap:**
+- If data quality status is `LOW-CONFIDENCE`, cap conviction at Medium
+  for ADD recommendations that depend on data from degraded domains.
+
 **Liquid NAV calculation:**
 - Pre-computed in the portfolio-summary JSON as `combined.liquid_nav`.
   This includes IB NAV + off-platform liquid assets (precious metals at spot,
@@ -112,6 +136,41 @@ State the formula and the resulting size explicitly in each recommendation
 so the user can adjust the inputs.
 
 ## Analysis Steps
+
+### 0. Pre-Processing
+
+**0.1. Portfolio Diff Cross-Reference**
+
+If portfolio diff summary was provided (from orchestrator Step 7.9):
+1. Parse the exited positions, new positions, increased/decreased
+   positions, and cash changes.
+2. During recommendation generation (Step 1), cross-reference every
+   recommendation against the diff:
+   - Do not recommend EXIT/TRIM on positions in the "exited" list
+   - Do not recommend ADD on positions in the "new positions" list
+     unless adding more is justified
+   - For positions in "increased/decreased", adjust size
+     recommendations to account for the change already made
+3. Log any skipped or adjusted recommendations with reason:
+   "Already executed per portfolio diff."
+4. Reference the diff findings in the Previous Analysis Delta
+   appendix section (Step 9).
+
+**0.2. Data Quality Constraint**
+
+If data quality status is `LOW-CONFIDENCE`:
+- Note the degraded domains in the output header
+- In Step 1, for ADD recommendations depending on data from degraded
+  domains, cap maximum conviction at Medium
+- Note the constraint in each affected recommendation:
+  "Conviction capped at Medium: data quality LOW-CONFIDENCE in [domain]."
+
+**0.3. Key Takeaways Synthesis**
+
+After reading the impact analysis, market research, and opportunity
+scoring, identify 3-5 specific, actionable insights. Each should be one
+sentence stating a concrete finding and its portfolio implication. These
+populate the Key Takeaways section of the final output.
 
 ### 1. Recommendations
 
@@ -127,6 +186,11 @@ assessment (Step 2.5). Only include opportunities assessed as `PROCEED`
 or `CAUTION` (with explicit justification for CAUTION items). Drop
 `REDUNDANT` opportunities unless there is a compelling reason to add
 exposure despite the overlap.
+
+If opportunity scoring report is unavailable: generate only
+`[IMPACT-DRIVEN]` recommendations. Skip Step 1.6 (Regime Opportunity
+Coverage). Note in the output header: "Regime-fitted opportunities
+not available (opportunity scoring was unavailable)."
 
 **Closed-capital constraint.** All recommendations must be funded
 exclusively from capital visible in the portfolio: IB account cash
@@ -166,7 +230,9 @@ For each recommendation:
   immediately deployable to IB (transfer time, custody logistics).
 - Position size: calculated per the Position Sizing Methodology above.
   State: conviction level, base allocation %, volatility modifier (if any),
-  resulting target size in % and absolute USD amount.
+  resulting target size in % and absolute USD amount. For non-USD instruments,
+  also state the amount in the instrument's primary trading currency using
+  the FX rate from the portfolio snapshot (e.g. "~€8,070 at EUR/USD 1.1527").
 - Rationale: why this action, referencing the impact analysis or
   opportunity scoring findings
 - Proceeds deployment (required for TRIM, EXIT, REBALANCE): where the
@@ -230,6 +296,34 @@ If an optimization applies, revise the recommendation's instrument,
 rationale, and cost analysis accordingly. Note the optimization in the
 recommendation text: "Implementation note: [explanation of why this
 instrument was chosen over the naive alternative]."
+
+### 1.55. Uninvested Cash Sweep
+
+After sizing all conviction-driven recommendations (Steps 1-1.5), check
+uninvested cash against the Cash Policy in investor-context.md.
+
+1. Read the target uninvested cash percentage from investor-context.md
+   (Cash Policy section).
+2. Calculate post-trade uninvested cash: start with current uninvested
+   cash per account (from portfolio JSON `balances.{account}.cash`),
+   add proceeds from TRIM/EXIT recommendations, subtract capital
+   deployed by ADD/REBALANCE recommendations.
+3. If post-trade uninvested cash exceeds the target percentage of
+   liquid NAV (plus the operational buffer exception from Cash Policy):
+   generate additional ADD recommendations to deploy the excess into
+   money market funds.
+4. Currency allocation for the sweep follows the standing currency
+   thesis in investor-context.md (e.g., if USD Deterioration thesis
+   is active, prefer EUR money market over USD money market).
+5. Preferred sweep vehicles: XEON (EUR), SGOV (USD), CSH2 (EUR
+   alternative). Use the currency guidance from Cash Policy.
+6. These sweep recommendations use Low conviction and are tagged
+   `[IMPACT-DRIVEN]` with strategic intent `[CASH DEPLOYMENT]`.
+   They appear after all conviction-driven recommendations in priority
+   order but are NOT optional — idle cash is a portfolio deficiency.
+
+This step ensures conviction-driven opportunities always get funded
+first, and money market deployment is the residual catch-all.
 
 ### 1.6. Regime Opportunity & Loser Coverage
 
@@ -400,12 +494,13 @@ This table combines action summary and deployment schedule into one.
 Each recommendation occupies one row if immediate, or multiple rows
 (one per tranche) if staged.
 
-| # | Action | Ticker/Asset | Account | From | To | Amount (USD) | Size (% Liq NAV) | Execute | Entry Condition | Source | Priority |
+| # | Action | Ticker/Asset | Account | From | To | Amount (USD) | Amount (Local) | Size (% Liq NAV) | Execute | Entry Condition | Source | Priority |
 
 Column definitions:
 - From: where capital comes from ("Cash", "USD cash", "EUR cash", "Proceeds from Rec N", or the position being sold)
 - To: the specific instrument being bought ("Cash" for sells, or target ticker)
-- Amount: tranche amount for staged, full amount for immediate
+- Amount (USD): tranche amount for staged, full amount for immediate, in USD
+- Amount (Local): amount in the instrument's primary trading currency (e.g. "€8,070" for EUR stocks, "C$12,700" for CAD stocks). Use the FX rate from the portfolio snapshot. Enter "—" if the instrument trades in USD.
 - Size: tranche size for staged, full size for immediate
 - Execute: absolute calendar week in ISO format "CW{nn}" (e.g. "CW11", "CW12"). For immediate-execution trades, use the current calendar week. For staged tranches, use the specific calendar week for each tranche. Never use relative labels like "Week 1", "Week 2".
 - Entry Condition: "Market open" for immediate, or price/macro/time condition for staged
@@ -417,6 +512,14 @@ week. **Recommendation numbers (#) must be assigned sequentially in
 this sorted order** — Rec 1 is the most urgent, Rec 2 is next, etc.
 Do NOT assign numbers by source type or any other grouping and then
 re-sort; the numbering itself must reflect urgency order.
+
+**Tranche placement rule:** For staged recommendations with multiple
+tranches, each tranche row is placed at its own Execute week position
+in the table — NOT grouped with the first tranche. For example, if
+Rec 3 has tranches at CW11 and CW13, the CW11 tranche row appears
+among the CW11 rows and the CW13 tranche row appears among the CW13
+rows, with CW12 rows in between. The Execute column must be
+monotonically non-decreasing when read top to bottom.
 
 Below the table: total new capital deployed, total capital freed,
 net cash flow, post-trade cash position (USD and % of liquid NAV).
@@ -525,6 +628,17 @@ Escalation flag types:
 - **DATA_QUALITY**: Analysis depends heavily on degraded data domains
   flagged in the market research Data Quality Assessment
 
+### 9. Previous Analysis Delta (if prior analysis exists)
+
+If a previous portfolio-analysis-*.md file was provided:
+1. Read the Recommendations section: which recommendations were acted on?
+   Cross-reference against the portfolio diff (Step 0.1) to identify
+   executed trades.
+2. Read the Watchlist section: which items have triggered or expired?
+3. Read the Standing Theses: have any been invalidated or reinforced
+   by portfolio changes or new market data?
+4. Summarize findings in the Appendix section "Previous Analysis Delta."
+
 ## Output
 Format the complete analysis per the output-template.md structure.
 Write to the file path provided by the orchestrator.
@@ -566,7 +680,9 @@ the output-template.md requirements:
    Executive Summary (plain-language 2-3 paragraph overview). The Detailed
    Findings (seven research sections) are in the Appendix. No Detailed
    Findings in the main body.
-4. Key Takeaways contains 3-5 specific insights (not generic statements)
+4. Key Takeaways section present with 3-5 specific insights (not generic
+   statements). Each references a concrete portfolio position, weight,
+   or exposure.
 5. Recommendations section structure (in order):
    a. **Summary** table (merged action + deployment) is the FIRST
       subsection. Each recommendation occupies one row if immediate, or
@@ -575,7 +691,12 @@ the output-template.md requirements:
       Entry Condition, Source, Priority. The Execute column uses absolute
       ISO calendar weeks ("CW11", "CW12"), never relative labels.
       Table is sorted by Execute week (earliest first), then by priority
-      within the same week. Followed by: cash flow totals, abort
+      within the same week. Tranche rows for the same recommendation are
+      NOT grouped together — each tranche row sits at its Execute week
+      position. **Validation: read the Execute column top to bottom and
+      confirm it is monotonically non-decreasing (CW11, CW11, CW12, CW12,
+      CW13, CW14... never CW13 before CW12). If not, re-sort before
+      reporting completion.** Followed by: cash flow totals, abort
       conditions for staged recs, immediate-execution grouping.
       No separate "Action Plan", "Action Summary Table", or "Deployment
       Schedule" sections exist anywhere in the document.
@@ -591,9 +712,13 @@ the output-template.md requirements:
 7. Implementation optimization: no recommendation uses a naked FX
    position when a yield-bearing money market ETF in the target currency
    is available; no recommendation ignores existing cash/money market
-   holdings in the same currency; uninvested cash >5% of liquid NAV
-   is flagged. If any optimization was missed, revise the recommendation
-   before reporting completion.
+   holdings in the same currency. If any optimization was missed, revise
+   the recommendation before reporting completion.
+7b. Cash sweep check: calculate post-trade uninvested cash (after all
+    recommendations applied). If it exceeds the target from Cash Policy
+    in investor-context.md (plus the operational buffer exception),
+    verify that money market sweep recommendations exist to deploy the
+    excess. If missing, add them before reporting completion.
 8. Stress Testing & Hedging section structure (in order):
    a. **Hedge Summary** table is the FIRST subsection. Consolidated
       table of ALL hedge instruments across all scenarios. Columns: #,
@@ -629,6 +754,10 @@ the output-template.md requirements:
     Opportunity Landscape is listed as either "Actioned" (with rec #)
     or "Not Actioned" (with specific reason). No opportunity silently
     dropped.
+12b. Thesis Coverage Matrix present in the Opportunity Landscape appendix
+    section (copied from opportunity-scorer output). Every standing thesis
+    from investor-context.md has a row. If opportunity scoring was
+    unavailable, note the omission instead.
 13. Regime Loser Exposure Check present: every loser from Top 5 Losers
     is cross-referenced against portfolio. Held losers are either
     actioned (with rec #) or justified. Non-held losers confirmed as

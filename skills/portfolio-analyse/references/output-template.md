@@ -35,7 +35,7 @@ Rules:
   abbreviation a reader unfamiliar with finance would not immediately
   understand.
 - Well-known company tickers (MSFT, AAPL) and instrument tickers
-  (SPY, QQQ) do NOT need footnotes. Account names (BondLedger,
+  (SPY, QQQ) do NOT need footnotes. Account names (Corporate,
   Personal) do not need footnotes. Standard units (USD, EUR, CHF, oz,
   BTC) do not need footnotes.
 - Thesis-derived bracket labels (e.g. `[INTEL]`, `[USD_DET]`,
@@ -152,8 +152,8 @@ If a recommendation is deployed across multiple tranches, it occupies
 multiple rows (one per tranche). Immediate-execution recommendations
 occupy a single row.
 
-| # | Action | Ticker/Asset | Account | From | To | Amount (USD) | Size (% Liq NAV) | Execute | Entry Condition | Source | Priority |
-|---|--------|--------------|---------|------|----|-------------|------------------|---------|-----------------|--------|----------|
+| # | Action | Ticker/Asset | Account | From | To | Amount (USD) | Amount (Local) | Size (% Liq NAV) | Execute | Entry Condition | Source | Priority |
+|---|--------|--------------|---------|------|----|-------------|----------------|------------------|---------|-----------------|--------|----------|
 
 Column definitions:
 - **#:** Recommendation number. Repeated across tranche rows for the
@@ -165,6 +165,10 @@ Column definitions:
   For TRIMs/EXITs: "Cash" or "Deploy per Rec N" if proceeds are earmarked.
 - **Amount (USD):** Dollar amount of the trade (tranche amount for staged
   deployments, full amount for immediate).
+- **Amount (Local):** Amount in the instrument's primary trading currency
+  (e.g. "€8,070" for a EUR-denominated stock on XETRA, "C$12,700" for
+  a CAD stock on TSX). Use the current FX rate from the portfolio snapshot.
+  If the instrument trades in USD, enter "—" (same as Amount USD).
 - **Size (% Liq NAV):** Position size as percentage of liquid NAV (tranche
   size for staged deployments, full size for immediate).
 - **Execute:** Absolute calendar week using ISO format: "CW{nn}" (e.g.
@@ -182,6 +186,14 @@ same week. **Recommendation numbers (#) must be assigned sequentially
 in this sorted order** — Rec 1 is the most urgent, Rec 2 is next, etc.
 Do NOT assign numbers by source type or any other grouping and then
 re-sort; the numbering itself must reflect urgency order.
+
+**Tranche placement rule:** For staged recommendations with multiple
+tranches, each tranche row is placed at its own Execute week position
+in the table — NOT grouped with the first tranche. For example, if
+Rec 3 has tranches at CW11 and CW13, the CW11 tranche row appears
+among the CW11 rows and the CW13 tranche row appears among the CW13
+rows, with CW12 rows in between. The Execute column must be
+monotonically non-decreasing when read top to bottom.
 - **Source:** `[IMPACT-DRIVEN]` or `[OPPORTUNITY-SCORER]`
 - **Priority:** High / Medium / Low
 
@@ -413,6 +425,18 @@ Summary of the opportunity-scorer's findings (if available):
   showing the worst-positioned assets given current conditions.
 - Geopolitical tradeable expressions
 - Regional divergence pair trades
+
+**Thesis Coverage Matrix:**
+
+| Thesis | Best Current Expression(s) | Existing Portfolio Coverage | Coverage Gap | Opportunity #(s) |
+|--------|---------------------------|---------------------------|-------------|-----------------|
+
+This table maps each standing thesis (from investor-context.md) to its
+best current tradeable expressions, shows which portfolio positions
+already cover the thesis, identifies gaps, and links to opportunity
+numbers. Every standing thesis must have a row. Coverage Gap values:
+Adequately covered / Under-expressed / Not expressed.
+
 If opportunity scoring was not available, note the omission.
 
 #### Impact & Risk Assessment

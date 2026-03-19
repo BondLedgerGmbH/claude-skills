@@ -45,6 +45,30 @@ a calculated position size:
   - No single new position >5% of liquid NAV
   - No single sector >30% cumulative exposure after addition
 
+- **Uninvested cash policy:** Uninvested cash (idle cash in IB accounts
+  not deployed into any instrument) is treated as a portfolio deficiency,
+  not a feature. The target uninvested cash percentage is defined in
+  investor-context.md under `Cash Policy`. If uninvested cash exceeds
+  the target after all other recommendations are computed, the
+  recommendation engine MUST generate additional recommendations to
+  deploy the excess into money market funds (XEON for EUR, SGOV for USD,
+  CSH2 as EUR alternative) or other low-risk yield-generating instruments
+  appropriate for the regime. These are not discretionary — idle cash
+  earns 0% and loses purchasing power to inflation daily. Money market
+  funds and T-bill ETFs are T+0/T+1 liquid, near-zero credit risk, and
+  generate yield that at minimum partially offsets inflation. There is
+  no rational reason to hold uninvested cash when these instruments
+  exist. The recommendation engine should:
+  1. First, size all conviction-driven recommendations (High, Medium,
+     Low) normally per the position sizing methodology above.
+  2. Then, deploy any **remaining** uninvested cash (above the target
+     in investor-context.md) into money market funds as a sweep.
+  This ensures conviction-driven opportunities always get funded first,
+  and money market deployment is the residual catch-all — not a
+  substitute for taking risk. Money market is the floor, not the
+  ceiling. Currency allocation of the deployment (USD vs EUR) should
+  align with the standing currency thesis in investor-context.md.
+
 - **Liquid NAV:** Pre-computed in the portfolio-summary JSON as
   `combined.liquid_nav`. This includes IB NAV + off-platform liquid assets
   (precious metals at spot, crypto at spot, Payward options at FMV).
@@ -62,12 +86,42 @@ regime classification (probability-weighted), credit cycle positioning,
 geopolitical risk overlay, regional/sector analysis, micro/tactical,
 and synthesis. Includes data quality validation gate.
 
+The market researcher must read the standing theses from
+investor-context.md and actively research current data relevant to
+each thesis. For example, if a standing thesis is "USD Deterioration",
+the researcher should collect current DXY, US debt/GDP, foreign
+Treasury holdings, Fed balance sheet data, and any recent
+developments that support or challenge the thesis. This ensures
+the opportunity scorer has thesis-specific data to work with.
+
 ### 0.5. Opportunity Scoring (opportunity-scorer subagent)
 Using the regime classification and credit cycle from Step 0:
 identify historical comparable periods, score opportunities by
 conviction and regime fit, identify geopolitical tradeable expressions
 and regional divergence pair trades. If data quality is LOW-CONFIDENCE,
 cap maximum conviction at Medium.
+
+**Standing thesis coverage (mandatory).** The opportunity scorer must
+read all standing theses from investor-context.md and actively seek
+opportunities that express each thesis under the current regime. This
+is not passive filtering — the scorer must treat each thesis as a
+search directive:
+
+1. For each standing thesis, identify 1-3 concrete, actionable
+   opportunities (specific tickers, instruments, or trades) that
+   best express that thesis given the current regime and market data.
+2. Score each thesis-driven opportunity using the same conviction
+   framework as regime-driven opportunities.
+3. Assess whether existing portfolio positions already express the
+   thesis adequately, or whether there are gaps.
+4. Include a **Thesis Coverage Matrix** in the output: a table mapping
+   each standing thesis to its best current expressions, existing
+   portfolio coverage, and identified gaps.
+
+This ensures the recommendation engine always considers standing
+theses alongside regime-driven opportunities, and that no thesis
+is neglected simply because the regime-driven scan didn't surface
+it organically.
 
 ### 1. Portfolio Snapshot
 - Combined NAV across all accounts (IB + off-platform). The portfolio-summary

@@ -130,6 +130,45 @@ For each regional divergence identified in the market research
 Add these to the main opportunity table with the `[RV]` tag.
 Aim for 2-3 pair trade ideas.
 
+### Step 4.5: Standing Thesis Opportunity Search
+
+Read all standing theses from investor-context.md. For each thesis,
+actively seek 1-3 concrete, actionable opportunities that express that
+thesis under the current regime. This is not passive filtering — treat
+each thesis as a search directive:
+
+1. For each standing thesis, identify specific instruments (tickers, ETFs,
+   pair trades) that best express the thesis given the current regime
+   and the market research data. Use WebSearch to find current candidates
+   if the market research does not surface them organically.
+2. Score each thesis-driven opportunity using the same conviction criteria
+   as regime-driven opportunities (Step 2).
+3. Check whether existing portfolio positions already express the thesis
+   adequately. If existing positions fully cover the thesis, note this
+   rather than adding redundant opportunities.
+4. Add thesis-driven opportunities to the main opportunity table (Step 2)
+   with a thesis tag (e.g. `[AI_BUBBLE]`, `[USD_DET]`, `[INTEL]`,
+   `[DEFENCE]`, `[PRIV_CREDIT]`). If a regime-driven opportunity already
+   expresses a thesis, add the thesis tag to it rather than creating a
+   duplicate.
+
+**Thesis Coverage Matrix:** After completing the search, produce a
+summary table:
+
+| Thesis | Best Current Expression(s) | Existing Portfolio Coverage | Coverage Gap | Opportunity #(s) |
+|--------|---------------------------|---------------------------|-------------|-----------------|
+
+Where:
+- **Best Current Expression(s):** 1-3 specific tickers/instruments
+- **Existing Portfolio Coverage:** positions already expressing this thesis
+  (from the portfolio JSON), with % of liquid NAV
+- **Coverage Gap:** Adequately covered / Under-expressed / Not expressed
+- **Opportunity #(s):** reference numbers from the opportunity table
+
+This matrix ensures every standing thesis is considered in every run
+and no thesis is neglected because the regime-driven scan did not
+surface it organically.
+
 ### Step 5: Dual Ranking
 
 Produce two ranked lists from the complete opportunity table:
@@ -190,6 +229,12 @@ Before reporting completion, re-read the output file and verify:
    historical evidence. Any losers currently held in portfolio are flagged.
 10. Claim labels (`[FACT]`, `[INFERENCE]`, `[ASSUMPTION]`) used throughout
 11. If LOW-CONFIDENCE: all convictions capped at Medium and constraint noted
+12. Thesis Coverage Matrix present: every standing thesis from
+    investor-context.md has a row. Each row has: best expressions,
+    existing coverage, coverage gap assessment, and opportunity references.
+    No thesis is missing from the matrix.
+13. Thesis-driven opportunities are tagged with their thesis label
+    (e.g. `[AI_BUBBLE]`, `[USD_DET]`) in the main opportunity table
 
 If any check fails: fix the output before reporting completion.
 

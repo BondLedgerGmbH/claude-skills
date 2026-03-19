@@ -45,6 +45,37 @@ Do not fill gaps with assumptions. If data is unavailable, label it
 `[UNAVAILABLE]` and move on. A gap flagged is more valuable than a
 gap filled with guesses.
 
+## Standing Thesis Research Mandate
+
+Before starting the seven-section methodology, read the Standing Theses
+section from investor-context.md. For each standing thesis, actively
+research current data relevant to that thesis throughout Sections 1-6.
+This is not passive filtering — treat each thesis as a research directive:
+
+- **AI Bubble Thesis:** Collect current AI/semiconductor valuations
+  (forward P/E, EV/Revenue), hyperscaler capex announcements, NVDA and
+  peer revenue growth, AI infrastructure spending trends.
+- **USD Deterioration Thesis:** Collect current DXY, US debt/GDP ratio,
+  foreign Treasury holdings trend, Fed balance sheet size, USD vs major
+  currencies YTD, de-dollarisation developments.
+- **Intelligence and Robotics Structural Demand Thesis:** Collect
+  robotics adoption rates, data centre construction pipeline, energy
+  infrastructure investment, hyperscaler capex commitments.
+- **Defence Robotics & Drone Warfare Thesis:** Collect Pentagon drone
+  program updates (Replicator, DDP), NATO drone procurement, defence
+  budget trends, recent contract awards to pure-play drone companies.
+- **Private Credit Stress Thesis:** Collect private credit default rates,
+  BDC discount-to-NAV trends, PIK usage rates, insurance allocation to
+  private credit, regulatory developments.
+
+For any theses not listed above (user may add new ones), research the
+key data points and indicators mentioned in the thesis description.
+
+Integrate thesis-specific findings into the relevant sections (e.g.,
+AI valuations in Section 5 under Technology, USD data in Section 1 under
+Fiscal and Currency, defence data in Section 5 under Defence sector).
+Also consolidate thesis-relevant findings in Section 7 (Synthesis).
+
 ## Research Methodology
 
 Execute all seven sections. No artificial limit on web searches.
@@ -64,7 +95,7 @@ tables or lists with freshness labels on every value.
 - Australia: RBA cash rate
 - Canada: BoC policy rate
 
-**Inflation:**
+**Inflation (official and alternative):**
 - US: CPI headline, CPI core, PCE headline, PCE core
 - Eurozone: HICP headline, HICP core
 - UK: CPI headline, CPI core
@@ -73,6 +104,17 @@ tables or lists with freshness labels on every value.
 - Switzerland: CPI
 - For each: latest reading, trend direction (accelerating/decelerating/stable),
   core vs headline divergence
+- **Truflation (truflation.com):** Current US daily inflation reading. Compare
+  to official CPI. Truflation uses actual home prices/mortgage costs (not OER),
+  updates basket weights annually, and leads official CPI turning points by
+  40-75 days on average. If Truflation diverges significantly from CPI, note
+  the likely driver (usually housing methodology). If unavailable, label
+  `[UNAVAILABLE]`.
+- **Real interest rates:** For US, Eurozone, UK, Japan: calculate policy rate
+  minus latest inflation reading. State whether monetary policy is restrictive
+  (positive real rate) or accommodative (negative real rate) in real terms.
+  Use Truflation as the US inflation input where available, official CPI
+  otherwise.
 
 **Growth and Employment:**
 - US: GDP QoQ annualised, NFP, unemployment rate, ISM Manufacturing PMI,
@@ -89,10 +131,17 @@ tables or lists with freshness labels on every value.
 **Liquidity and Credit:**
 - Fed balance sheet: size and direction (expanding/contracting/stable)
 - ECB balance sheet: direction
+- US M2 money supply: latest level, YoY growth rate, trend direction.
+  M2 expansion precedes inflation by 12-18 months; contraction precedes
+  disinflation. Also note Eurozone M3 and China M2 direction if available.
 - US IG credit spread (ICE BofA), US HY credit spread (ICE BofA)
 - JPMorgan EMBI Global spread
 - VIX: current level and 30-day average
 - Fed SLOOS: latest tightening/easing direction
+- Gold price (spot) and central bank gold purchases (World Gold Council
+  latest data). Sustained price increases alongside central bank accumulation
+  (especially non-Western central banks) signals declining confidence in
+  fiat/USD reserves. Note gold/copper ratio as a growth-vs-fear signal.
 
 **Yield Curves:**
 - US: 2Y, 10Y yields, 2s10s spread, 3m10y spread
@@ -105,6 +154,28 @@ tables or lists with freshness labels on every value.
 - US: deficit trajectory, latest CBO projections, major fiscal legislation
 - Eurozone: fiscal rules compliance, notable national budgets
 - Key EM fiscal risks (if material)
+
+**Real Economy Leading Indicators:**
+- Copper price (LME/COMEX): level and 3-month trend. Copper is a proxy for
+  global industrial activity across construction, electronics, manufacturing.
+  Not easily manipulated by governments. Note copper/gold ratio as a
+  growth-vs-fear signal.
+- Baltic Dry Index: level and trend. Leading indicator of global trade
+  activity and commodity demand. Sharp drops signal weakening global demand
+  before GDP data. Source: Baltic Exchange.
+- Global trade volumes: CPB Netherlands Bureau (World Trade Monitor) latest
+  reading and trend. Track actual volume of goods traded (not value, which
+  is distorted by price changes). Volume contraction precedes slowdowns and
+  reveals whether deglobalisation/reshoring is accelerating.
+- Energy prices: Brent crude, WTI, and regional natural gas (US Henry Hub
+  vs European TTF). Energy is an input cost for everything. Regional price
+  divergences reveal supply chain fragmentation and geopolitical risk.
+  Energy price spikes precede headline inflation increases.
+- Real wage growth: US and Eurozone nominal wage growth minus inflation
+  (use Truflation or alternative measure as deflator where available,
+  official CPI otherwise). Negative real wages = eroding consumer purchasing
+  power regardless of headline GDP. This is a ground-truth signal for
+  stagflation assessment.
 
 **Emerging Markets:**
 - Brazil, Mexico, South Africa, Turkey: CPI, policy rate, FX vs USD YTD
@@ -281,6 +352,10 @@ Before reporting completion, re-read the output file and verify:
 8. Section 7 contains 3 regime-shift signals with thresholds
 9. Freshness labels are present on data points throughout
 10. Gaps are explicitly flagged (not silently omitted)
+11. Standing thesis coverage: for each thesis in investor-context.md,
+    at least 2 thesis-specific data points appear somewhere in the
+    research (Sections 1-6 or 7). If a thesis has no relevant data
+    found, flag it explicitly in Section 7 as a gap.
 
 If any check fails: fix the output before reporting completion. If a gap
 cannot be fixed (e.g., no search results for a region), add an explicit
@@ -298,9 +373,11 @@ Prefer data from these sources (not exclusive, but prioritise):
 *Macro research:* IMF WEO, World Bank, OECD Economic Outlook
 *Market/financial press:* Bloomberg, Reuters, FT, WSJ, The Economist
 *Credit/fixed income:* ICE BofA indices, JPMorgan EMBI, Fed SLOOS
-*Commodities:* IEA, EIA STEO, World Gold Council, LME
-*Trade/capital flows:* WTO, IIF Capital Flows Tracker, CFTC COT
+*Commodities:* IEA, EIA STEO, World Gold Council, LME, COMEX
+*Trade/capital flows:* WTO, IIF Capital Flows Tracker, CFTC COT,
+CPB Netherlands Bureau (World Trade Monitor), Baltic Exchange
 *Leading indicators:* S&P Global PMI, OECD CLI, BofA Fund Manager Survey
+*Alternative inflation:* Truflation (truflation.com), FRED (breakevens, M2)
 
 ## Voice
 No em-dashes. No American business slang. Functional, economical sentences.

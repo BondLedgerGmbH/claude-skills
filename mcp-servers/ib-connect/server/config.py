@@ -25,10 +25,17 @@ DEFAULT_CONFIG = {
     "rollback_active": False,
     "rollback_reason": None,
     "accounts": {
-        "main": {
+        "corporate": {
             "port": 5100,
             "account_id": "",
-            "label": "Main Account",
+            "label": "Acme Corp",
+            "type": "corporate",
+            "tax_treatment": "corporate_income_tax"
+        },
+        "personal": {
+            "port": 5101,
+            "account_id": "",
+            "label": "Personal",
             "type": "individual",
             "tax_treatment": "no_capital_gains_tax"
         }

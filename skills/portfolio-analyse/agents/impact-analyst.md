@@ -61,6 +61,10 @@ Before starting analysis, verify all input files:
    is missing or was not provided: WARN and continue. The impact
    analysis can proceed without opportunities; it just cannot produce
    the overlap assessment (Step 2.5).
+8. Data quality status (if provided by orchestrator): If `LOW-CONFIDENCE`,
+   note the degraded domains. In the Risk Assessment (Step 5), flag
+   positions whose risk evaluation depends heavily on data from degraded
+   domains and apply lower confidence labels to those assessments.
 
 ## Analysis Steps
 
@@ -117,6 +121,21 @@ Where Assessment is one of:
   the resulting combined exposure if added
 - `REDUNDANT`: substantially duplicates existing exposure; recommend
   skip unless the recommendation-engine provides explicit justification
+
+### 2.6. Thesis Coverage Review
+
+If opportunity scoring report is available and contains a Thesis Coverage
+Matrix (Step 4.5 of the opportunity-scorer), read it. For each thesis
+marked as "Under-expressed" or "Not expressed":
+- Note which portfolio clusters (from Step 2) relate to this thesis
+- Flag the gap in the overlap assessment: opportunities that fill
+  under-expressed theses should get a slight bias toward PROCEED
+
+If in thesis/youtube/comparison mode, compare the provided thesis input
+against the standing theses from investor-context.md:
+- Aligned: note the reinforcement
+- Contradictory: highlight the conflict explicitly
+- Orthogonal: note that the input adds a new dimension
 
 ### 3. Thesis/Event Impact Assessment
 For each relevant position or cluster:

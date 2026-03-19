@@ -37,10 +37,10 @@ INTERMEDIATE_FILE_MAX_AGE_DAYS = 7
 RESEARCH_CACHE_MAX_AGE_HOURS = 24
 MAX_ESCALATION_RETRIES = 1
 DATA_QUALITY_UNAVAILABLE_THRESHOLD_PCT = 20
-PROJECT_DIR = <your-project-directory>
-OUTPUT_DIR = <your-project-directory>/output/ib-analysis
-SKILL_DIR = <your-project-directory>/.claude/skills/portfolio-analyse
-AGENTS_DIR = <your-project-directory>/.claude/agents
+PROJECT_DIR = {PROJECT_DIR}
+OUTPUT_DIR = {OUTPUT_DIR}
+SKILL_DIR = {SKILL_DIR}
+AGENTS_DIR = {AGENTS_DIR}
 ```
 
 ## Output Directory Structure
@@ -64,6 +64,29 @@ OUTPUT_DIR/
 - `yt-transcript` skill must be installed for YouTube mode and comparison mode with YouTube URLs
 - Four custom subagents in `.claude/agents/`: `market-researcher.md`, `opportunity-scorer.md`, `impact-analyst.md`, `recommendation-engine.md`
 
+## Bash Safety Rules (MANDATORY)
+
+Claude Code flags shell metacharacters as security risks, prompting the user for confirmation. This MUST be avoided — every prompt interrupts the pipeline and frustrates the user.
+
+**NEVER use any of these in Bash tool calls:**
+- Brace expansion: `{a,b,c}`
+- Command substitution: `$(...)` or backticks
+- Redirects: `>`, `>>`, `2>/dev/null`, `< file`
+- Pipes: `|`
+- Chaining: `&&`, `||`, `;`
+- Heredocs: `<< EOF`
+- Variable expansion in complex contexts
+
+**Instead:**
+- For `mkdir`: list each path as a separate argument, no braces. E.g. `mkdir -p /path/dir1 /path/dir2 /path/dir3`
+- For any non-trivial logic (date math, JSON processing, file age checks, data enrichment): write a Python script to `OUTPUT_DIR/tmp-scripts/` using the **Write** tool (this path is within the allowed Write scope), then execute with `python3.12 OUTPUT_DIR/tmp-scripts/script_name.py`. Clean up scripts at the end.
+- For file listing/searching: use the **Glob** tool, not `ls` or `find`
+- For file content searching: use the **Grep** tool, not `grep` or `rg`
+- For reading files: use the **Read** tool, not `cat`/`head`/`tail`
+- For checking if a file exists: use the **Glob** tool with the exact filename, not `ls` or `test -f`
+- Each Bash call should be ONE simple command with plain string arguments only
+- **Write tool**: ONLY write to paths under `OUTPUT_DIR/` (which is in the allow list). Never write to `/tmp/` or other paths.
+
 ## Execution Flow
 
 ### Step 1: Ensure output directory exists
@@ -71,7 +94,9 @@ OUTPUT_DIR/
 Create `OUTPUT_DIR` and all subdirectories if they do not exist:
 `0-portfolio-snapshots/`, `0-thesis-inputs/`, `1-market-research/`,
 `2-opportunity-scoring/`, `3-impact-analysis/`, `3-hedge-data/`,
-`4-portfolio-analysis/`.
+`4-portfolio-analysis/`, `tmp-scripts/`.
+
+**Implementation:** Use `mkdir -p` with each path listed explicitly as separate arguments (no brace expansion).
 
 ### Step 2: Pull portfolio data
 
@@ -91,6 +116,8 @@ Call `ib_portfolio_summary(account="all")`. Do NOT use `force_refresh=true` unle
 
 - If error response: report the error and stop.
 - If success: save the full response as `OUTPUT_DIR/0-portfolio-snapshots/portfolio-summary-{YYYY-MM-DD-HH-MM-SS}.json` with `chmod 600`. This timestamped file is the canonical portfolio handoff to all subagents for this run.
+
+**Filter closed positions:** Before saving, remove any positions where `position == 0` or `market_value == 0`. The IB API returns closed positions for P&L tracking purposes (they have `realized_pnl` but zero shares). Also remove dividend rights and other entries with zero market value. These ghost positions cause downstream subagents to generate invalid recommendations (e.g., recommending EXIT on an already-liquidated holding). Log the count of filtered positions.
 
 **Validate portfolio data** (applies to both cached and fresh snapshots):
 - At least one account must have non-zero NAV. If all zero: stop and report.
@@ -459,6 +486,38 @@ Save to `OUTPUT_DIR/3-hedge-data/hedge-data-{YYYY-MM-DD-HH-MM-SS}.json` with `ch
 - If VIX snapshot fails: note in data_quality, recommendation-engine will fetch via WebSearch.
 - If all option chains fail: save the JSON with empty `option_chains`. The recommendation-engine's hedge strategies will note "live options data unavailable" and use directional estimates.
 
+### Step 7.9: Compute portfolio diff from previous snapshot
+
+Before dispatching the recommendation engine, automatically detect what changed since the last portfolio snapshot. This ensures the recommendation engine knows which prior recommendations were already executed without manual specification.
+
+**7.9.1: Find the previous portfolio snapshot**
+
+Look for the second-most-recent `portfolio-summary-*.json` in `OUTPUT_DIR/0-portfolio-snapshots/` (the most recent is the current run's snapshot). If none exists, skip this step — there is no prior state to diff against.
+
+**7.9.2: Compute the diff**
+
+Compare the previous and current snapshots. For each position in the previous snapshot (filtering out `off_platform` positions since those are static from investor-context.md):
+
+- **Exited positions:** Positions present in previous snapshot (position > 0) but absent or position=0 in current. Record: ticker, previous shares, previous market value, account.
+- **New positions:** Positions present in current snapshot but absent or position=0 in previous. Record: ticker, current shares, current market value, account.
+- **Increased positions:** Same ticker, larger position size. Record: ticker, share delta, value delta, account.
+- **Decreased positions:** Same ticker, smaller position size. Record: ticker, share delta, value delta, account.
+- **Cash changes:** Compare `balances.{account}.cash` between snapshots. Record per-account cash deltas.
+
+**7.9.3: Format as a structured summary**
+
+Save the diff as a concise text block, e.g.:
+```
+PORTFOLIO CHANGES SINCE PREVIOUS SNAPSHOT ({previous_timestamp}):
+EXITED: ACMR (Corporate, was 48 shares / $2,160), SHOP (Corporate, was 17 shares / $2,283)
+INCREASED: XEON (Personal, +107.66 shares / +$18,339 base USD)
+DECREASED: SGOV (Personal, -186 shares / -$18,685)
+CASH CHANGES: Corporate +$344, Personal unchanged
+NEW POSITIONS: none
+```
+
+Include this diff text in the recommendation engine prompt so it can automatically identify which prior recommendations were already executed and avoid duplicating them.
+
 ### Step 8: Dispatch Subagent 4 - Recommendation Engine
 
 Generate the output file path: `OUTPUT_DIR/4-portfolio-analysis/portfolio-analysis-{YYYY-MM-DD-HH-MM-SS}.md`
@@ -481,6 +540,7 @@ Prompt the subagent with:
 - Path to investor-context.md (`SKILL_DIR/references/investor-context.md`)
 - Path to output-template.md (`SKILL_DIR/references/output-template.md`)
 - Path to previous portfolio-analysis-*.md (if exists)
+- Portfolio diff summary (from Step 7.9, if available) — this tells the recommendation engine which trades were already executed since the previous analysis
 - Mode identifier (thesis/youtube/scan/comparison)
 - Output file path for the final analysis
 - Instruction to follow the methodology in its agent definition and format per output-template.md
