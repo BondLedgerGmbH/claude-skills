@@ -59,7 +59,7 @@ Parse the YouTube URL to extract the video ID. Handle these formats:
 Run the transcript extraction script:
 
 ```bash
-python /path/to/skill/scripts/fetch_transcript.py VIDEO_ID [--output-dir OUTPUT_DIR]
+python {base_directory}/scripts/fetch_transcript.py VIDEO_ID [--output-dir OUTPUT_DIR]
 ```
 
 The default `--output-dir` should be `output/yt-transcripts/` inside the current project directory (as configured in the Configuration section above). Create the folder if it doesn't exist. For example: `--output-dir /path/to/project/output/yt-transcripts`
@@ -146,8 +146,8 @@ A concise 2-4 paragraph synthesis of the entire video content. This should stand
 Convert both markdown files to PDF using the conversion script:
 
 ```bash
-python /path/to/skill/scripts/md_to_pdf.py {video_id}_summary.md
-python /path/to/skill/scripts/md_to_pdf.py {video_id}_transcript.md
+python {base_directory}/scripts/md_to_pdf.py {video_id}_summary.md
+python {base_directory}/scripts/md_to_pdf.py {video_id}_transcript.md
 ```
 
 This produces `{video_id}_summary.pdf` and `{video_id}_transcript.pdf` in the same output directory. The PDFs should be plain black and white, reflecting markdown formatting only — no colours, backgrounds, or visual effects. Do NOT open the PDF files after creation — the user will open them manually.
