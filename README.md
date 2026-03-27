@@ -24,7 +24,7 @@ Copy the skill directory into your Claude Code skills folder:
 
 ```bash
 # Clone the repo
-git clone https://github.com/xjarko123/claude-skills.git /tmp/claude-skills
+git clone https://github.com/BondLedgerGmbH/claude-skills.git /tmp/claude-skills
 
 # Copy the skill you want
 cp -r /tmp/claude-skills/skills/skill-security-scanner ~/.claude/skills/
@@ -36,7 +36,7 @@ rm -rf /tmp/claude-skills
 ### Install all skills
 
 ```bash
-git clone https://github.com/xjarko123/claude-skills.git /tmp/claude-skills
+git clone https://github.com/BondLedgerGmbH/claude-skills.git /tmp/claude-skills
 cp -r /tmp/claude-skills/skills/* ~/.claude/skills/
 rm -rf /tmp/claude-skills
 ```
@@ -46,7 +46,7 @@ rm -rf /tmp/claude-skills
 The portfolio analysis skill uses four subagents that need to be placed in `~/.claude/agents/`:
 
 ```bash
-git clone https://github.com/xjarko123/claude-skills.git /tmp/claude-skills
+git clone https://github.com/BondLedgerGmbH/claude-skills.git /tmp/claude-skills
 
 # Copy the skill
 cp -r /tmp/claude-skills/skills/portfolio-analyse ~/.claude/skills/
@@ -68,7 +68,7 @@ Then configure the skill:
 The skill will not work without valid paths and will not produce accurate results without a properly configured `investor-context.md`. See the file itself for detailed comments on each section.
 
 **Requirements:**
-- [ib-connect](https://github.com/xjarko123/ib-connect) MCP server configured with your IB accounts
+- [ib-connect](https://github.com/BondLedgerGmbH/claude-skills/tree/main/mcp-servers/ib-connect) MCP server configured with your IB accounts
 - `yt-transcript` skill installed (for YouTube mode)
 
 ### Verify installation

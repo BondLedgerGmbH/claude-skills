@@ -24,7 +24,9 @@ MCP server for Interactive Brokers Client Portal Gateway. Manages gateway lifecy
 
 ```bash
 # Clone to ~/.ib-connect
-git clone https://github.com/CorporateGmbH/ib-connect.git ~/.ib-connect
+git clone https://github.com/BondLedgerGmbH/claude-skills.git /tmp/claude-skills
+cp -r /tmp/claude-skills/mcp-servers/ib-connect ~/.ib-connect
+rm -rf /tmp/claude-skills
 
 # Create virtual environment and install dependencies
 cd ~/.ib-connect
