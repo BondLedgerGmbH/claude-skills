@@ -68,7 +68,7 @@ Then configure the skill:
 The skill will not work without valid paths and will not produce accurate results without a properly configured `investor-context.md`. See the file itself for detailed comments on each section.
 
 **Requirements:**
-- [ib-connect](https://github.com/BondLedgerGmbH/claude-skills/tree/main/mcp-servers/ib-connect) MCP server configured with your IB accounts
+- [ib-connect](https://github.com/BondLedgerGmbH/mcp) MCP server configured with your IB accounts
 - `yt-transcript` skill installed (for YouTube mode)
 
 ### Verify installation
