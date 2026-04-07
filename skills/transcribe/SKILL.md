@@ -238,11 +238,9 @@ Create these directories automatically if they don't exist.
 
     **Pre-flight check**: Verify `~/.local/bin/piper` exists and the voice model `~/.local/share/piper-voices/en_US-amy-medium.onnx` is present. If either is missing, report the error and installation instructions (see Error Handling) and skip audio generation — do not fail the entire transcription.
 
-    **Text preparation**: Extract a narration-friendly version of the summary. Strip Markdown formatting (headers, table syntax, bullet markers, checkboxes, links, bold/italic markers). Keep the content structure readable as spoken text — for example, convert "## Key Discussion Points" to "Key Discussion Points." and bullet items to natural sentences. Remove the metadata table entirely. The goal is text that sounds natural when read aloud, not a literal reading of Markdown syntax.
-
-    **Generate audio**:
+    **Generate audio**: Pipe the raw summary Markdown file directly into Piper — no reformatting or stripping. Read the file as-is:
     ```bash
-    echo "<prepared_text>" | ~/.local/bin/piper \
+    cat "transcribe-output/<MMDDYYYY>/<name>_summary.md" | ~/.local/bin/piper \
       --model ~/.local/share/piper-voices/en_US-amy-medium.onnx \
       --output_file "transcribe-output/<MMDDYYYY>/<name>_summary.wav"
     ```
