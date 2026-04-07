@@ -238,9 +238,24 @@ Create these directories automatically if they don't exist.
 
     **Pre-flight check**: Verify `~/.local/bin/piper` exists and the voice model `~/.local/share/piper-voices/en_US-amy-medium.onnx` is present. If either is missing, report the error and installation instructions (see Error Handling) and skip audio generation — do not fail the entire transcription.
 
-    **Generate audio**: Pipe the raw summary Markdown file directly into Piper — no reformatting or stripping. Read the file as-is:
+    **Narration text preparation**: Read the summary Markdown and convert it to narration-friendly plain text. Write the prepared text to a temp file at `/tmp/piper_narration_<sanitized_name>.txt`. Apply all of the following transformations:
+
+    - **Remove the metadata table entirely** — the `| Field | Value |` block and all its rows including the `|---|---|` separator. This information is either redundant with the overview or meaningless in audio (file links, quality badges).
+    - **Strip Markdown heading markers** — convert `# Heading`, `## Heading`, `### Heading` to just the heading text followed by a period. For example, `## Key Discussion Points` becomes `Key Discussion Points.`
+    - **Strip bold/italic markers** — remove `**`, `*`, `__`, `_` wrapping. `**Topic**` becomes `Topic`.
+    - **Strip link syntax** — convert `[link text](url)` to just the link text. Drop bare URLs entirely.
+    - **Strip blockquote markers** — remove leading `> ` from lines.
+    - **Strip checkbox syntax** — convert `- [ ]` and `- [x]` to plain list items.
+    - **Strip bullet markers** — remove leading `- ` from list items. Each item becomes its own sentence/line.
+    - **Convert numbered lists** — convert `1.`, `2.`, `3.` etc. to `First.`, `Second.`, `Third.` and so on up to `Tenth.`. Beyond ten, keep the numeral with "th" (e.g., `11.` becomes `Eleventh.`... or just keep the number).
+    - **Strip timestamps** — remove `(~MM:SS)` and `(~HH:MM:SS)` patterns. These are visual navigation aids that are meaningless in audio.
+    - **Strip code fences** — remove triple backtick lines and their language identifiers.
+    - **Remove cross-reference links section** — any lines that are purely navigation links to transcript files (e.g., `> Summary: [name](path)`) should be removed.
+    - **Preserve all actual content words** — every piece of information, opinion, name, figure, and conclusion from the summary must appear in the narration text. This is not a re-summary — it is the same content with visual scaffolding removed.
+
+    **Generate audio**:
     ```bash
-    cat "transcribe-output/<MMDDYYYY>/<name>_summary.md" | ~/.local/bin/piper \
+    cat "/tmp/piper_narration_<sanitized_name>.txt" | ~/.local/bin/piper \
       --model ~/.local/share/piper-voices/en_US-amy-medium.onnx \
       --output_file "transcribe-output/<MMDDYYYY>/<name>_summary.wav"
     ```
