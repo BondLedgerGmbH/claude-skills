@@ -1,0 +1,90 @@
+{
+  "currency": "CHF",
+  "supplier": {
+    "name": "Acme Consulting GmbH",
+    "address": [
+      "Musterstrasse 42",
+      "8001 Zürich",
+      "Switzerland"
+    ],
+    "vat": "CHE-123.456.789 MWST"
+  },
+  "recipient": {
+    "name": "Globex Corp AG",
+    "address": [
+      "Beispielweg 10",
+      "4001 Basel",
+      "Switzerland"
+    ]
+  },
+  "invoice": {
+    "number": "AC-2026-03-003",
+    "date": "April 7, 2026",
+    "service_period": "March 2 - 31, 2026",
+    "due_date": "April 30, 2026"
+  },
+  "service": {
+    "description": "Strategic consulting services",
+    "subtitle": "Per Contractor Agreement dated February 26, 2026"
+  },
+  "hours": 71.5,
+  "rate": 150.00,
+  "vat": {
+    "mode": "inclusive",
+    "rate": 0.081
+  },
+  "payment": {
+    "account_holder": "Acme Consulting GmbH",
+    "iban": "CH93 0076 2011 6238 5295 7",
+    "bic": "UBSWCHZH80A"
+  },
+  "notes": "",
+  "appendix_title": "Timesheet Breakdown.",
+  "line_items": [
+    {"date": "Mar 2, 2026", "hours": 3.0, "description": "Onboarding - setup and review of handover package"},
+    {"date": "Mar 3, 2026", "hours": 0.5, "description": "Review Q1/26 roadmap ahead of leadership call"},
+    {"date": "Mar 3, 2026", "hours": 1.5, "description": "Product intro call with leadership team"},
+    {"date": "Mar 4, 2026", "hours": 1.0, "description": "Review Q1/26 top priority roadmap items ahead of Jour Fix Product/Tech call"},
+    {"date": "Mar 4, 2026", "hours": 1.0, "description": "Jour Fix Product/Tech call"},
+    {"date": "Mar 5, 2026", "hours": 2.0, "description": "Cash Orders PRD review"},
+    {"date": "Mar 9, 2026", "hours": 4.0, "description": "Cash Orders discovery - workflows"},
+    {"date": "Mar 10, 2026", "hours": 1.5, "description": "Sprint planning process review with engineering lead"},
+    {"date": "Mar 11, 2026", "hours": 1.0, "description": "Jour Fix Product/Tech call"},
+    {"date": "Mar 11, 2026", "hours": 1.0, "description": "Product team - way of working walkthrough"},
+    {"date": "Mar 11, 2026", "hours": 1.0, "description": "Cash Orders Native Mode PRD review with engineering team"},
+    {"date": "Mar 11, 2026", "hours": 0.5, "description": "End-of-day updates"},
+    {"date": "Mar 12, 2026", "hours": 1.0, "description": "Pre-sales intro and product walkthrough with sales lead"},
+    {"date": "Mar 12, 2026", "hours": 1.0, "description": "Cash Orders - research design preparation"},
+    {"date": "Mar 16, 2026", "hours": 2.0, "description": "Cash Orders research follow-up with team and LP questionnaire prep"},
+    {"date": "Mar 16, 2026", "hours": 4.0, "description": "Broker Desk FX Triangulation review and discovery"},
+    {"date": "Mar 17, 2026", "hours": 3.0, "description": "Best Execution Reporting review and discovery"},
+    {"date": "Mar 17, 2026", "hours": 1.0, "description": "Broker Desk Compass session"},
+    {"date": "Mar 17, 2026", "hours": 3.0, "description": "Internal tooling: design, develop, deploy, test and demo"},
+    {"date": "Mar 18, 2026", "hours": 1.5, "description": "Weekly Product/Tech prep"},
+    {"date": "Mar 18, 2026", "hours": 3.5, "description": "Weekly Product/Tech call follow-ups"},
+    {"date": "Mar 18, 2026", "hours": 4.0, "description": "Cash Orders LP/venue research outreach and processing"},
+    {"date": "Mar 19, 2026", "hours": 1.0, "description": "Product team improvements discussion with head of engineering"},
+    {"date": "Mar 19, 2026", "hours": 1.0, "description": "Best Execution Reporting"},
+    {"date": "Mar 20, 2026", "hours": 1.0, "description": "Sync with sales and engineering leads"},
+    {"date": "Mar 20, 2026", "hours": 1.0, "description": "SOR Fee Awareness"},
+    {"date": "Mar 23, 2026", "hours": 1.0, "description": "SOR Fee Awareness - continued"},
+    {"date": "Mar 23, 2026", "hours": 1.0, "description": "Product and Engineering collaboration session"},
+    {"date": "Mar 23, 2026", "hours": 0.5, "description": "Meet and greet with team member"},
+    {"date": "Mar 23, 2026", "hours": 0.5, "description": "Meet and greet with stakeholder"},
+    {"date": "Mar 23, 2026", "hours": 5.5, "description": "RFQ discovery - review existing docs, desk research, comparison matrix"},
+    {"date": "Mar 23, 2026", "hours": 1.0, "description": "Meeting follow-ups"},
+    {"date": "Mar 24, 2026", "hours": 1.0, "description": "Prep: client requests gathering with Pre-Sales"},
+    {"date": "Mar 24, 2026", "hours": 1.0, "description": "RFQ: client insights with Pre-Sales team"},
+    {"date": "Mar 24, 2026", "hours": 0.5, "description": "RFQ: client insights with Pre-Sales team"},
+    {"date": "Mar 24, 2026", "hours": 1.0, "description": "Cash Orders: process most recent LP questionnaires"},
+    {"date": "Mar 24, 2026", "hours": 4.0, "description": "Cash Orders, SOR Fee Awareness"},
+    {"date": "Mar 25, 2026", "hours": 2.0, "description": "RFQ Decision Brief"},
+    {"date": "Mar 25, 2026", "hours": 1.5, "description": "Product/Tech Weekly"},
+    {"date": "Mar 25, 2026", "hours": 0.5, "description": "Release mid-sprint checkpoint"},
+    {"date": "Mar 26, 2026", "hours": 1.0, "description": "Follow-ups on Teams"},
+    {"date": "Mar 26, 2026", "hours": 0.5, "description": "RFQ sync: Product, Tech and Sales"},
+    {"date": "Mar 26, 2026", "hours": 1.0, "description": "Pre-OOO planning with team leads"},
+    {"date": "Mar 27, 2026", "hours": 1.0, "description": "Street-side RFQ PRD review"},
+    {"date": "Mar 27, 2026", "hours": 1.0, "description": "Follow-ups on Teams before PTO"}
+  ]
+}

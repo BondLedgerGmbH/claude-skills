@@ -1,0 +1,33 @@
+{
+  "profile_name": "Acme Consulting GmbH → Globex Corp AG",
+  "currency": "CHF",
+  "number_prefix": "AC",
+  "default_service": "Strategic consulting services",
+  "default_rate": 150,
+  "supplier": {
+    "name": "Acme Consulting GmbH",
+    "address": [
+      "Musterstrasse 42",
+      "8001 Zürich",
+      "Switzerland"
+    ],
+    "vat": "CHE-123.456.789 MWST"
+  },
+  "recipient": {
+    "name": "Globex Corp AG",
+    "address": [
+      "Beispielweg 10",
+      "4001 Basel",
+      "Switzerland"
+    ]
+  },
+  "vat": {
+    "mode": "inclusive",
+    "rate": 0.081
+  },
+  "payment": {
+    "account_holder": "Acme Consulting GmbH",
+    "iban": "CH93 0076 2011 6238 5295 7",
+    "bic": "UBSWCHZH80A"
+  }
+}

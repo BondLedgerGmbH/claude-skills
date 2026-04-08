@@ -1,0 +1,36 @@
+{
+  "currency": "EUR",
+  "supplier": {
+    "name": "Acme Consulting",
+    "address": [
+      "123 Main Street",
+      "10115 Berlin",
+      "Germany"
+    ]
+  },
+  "recipient": {
+    "name": "Client Co",
+    "address": [
+      "456 Business Ave",
+      "75001 Paris",
+      "France"
+    ]
+  },
+  "invoice": {
+    "number": "INV-2026-0042",
+    "date": "April 7, 2026",
+    "due_date": "May 7, 2026"
+  },
+  "service": {
+    "description": "Strategic advisory - Q1 engagement"
+  },
+  "total": 5000.00,
+  "vat": {
+    "mode": "none"
+  },
+  "payment": {
+    "account_holder": "Acme Consulting GmbH",
+    "iban": "DE89 3704 0044 0532 0130 00",
+    "bic": "COBADEFFXXX"
+  }
+}
