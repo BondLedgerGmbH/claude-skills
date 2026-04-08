@@ -639,150 +639,121 @@ If a previous portfolio-analysis-*.md file was provided:
    by portfolio changes or new market data?
 4. Summarize findings in the Appendix section "Previous Analysis Delta."
 
-## Output
-Format the complete analysis per the output-template.md structure.
-Write to the file path provided by the orchestrator.
+## Output — Multi-Part Writing
 
-The report is front-loaded for action. Main body section order:
+The report is large (~60K characters). To avoid generation timeouts,
+write it in three sequential parts to separate files. The orchestrator
+concatenates them into the final output.
+
+The orchestrator provides an output file path (e.g.,
+`OUTPUT_DIR/4-portfolio-analysis/portfolio-analysis-{timestamp}.md`).
+Write each part to:
+- `{output_path}.part1.md`
+- `{output_path}.part2.md`
+- `{output_path}.part3.md`
+
+The report is front-loaded for action. Complete all analysis and
+thinking before writing Part 1. Do not start writing until all
+recommendations, stress tests, and appendix content are determined.
+
+### Part 1: Main Body
+
+Write to `{output_path}.part1.md`. Contains (in order):
 1. Header
-2. Portfolio Snapshot
-3. Global Market Context (Executive Summary only)
+2. Portfolio Snapshot (hierarchical asset class allocation only)
+3. Global Market Context (Executive Summary only, no Detailed Findings)
 4. Key Takeaways
-5. Recommendations (Summary table first, then details, coverage checks, cash rebalance)
-6. Stress Testing & Hedging (Hedge Summary table first, then scenarios, cost-efficiency)
-7. Comparison Analysis + Decision Triggers (Mode 4 only)
-
-All supporting analysis goes in the Appendix:
-- Global Market Context: Detailed Findings
-- Opportunity Landscape
-- Impact & Risk Assessment
-- Steelman Check
-- Watchlist
-- Monitoring Framework
-- Previous Analysis Delta
-- Escalation Flags
-- Allocation tables (Sector, Currency, Geography)
-- Top 10 Positions, Concentration Flags, Full Position List
-
-## Output Validation
-Before reporting completion, re-read the output file and verify against
-the output-template.md requirements:
-1. Header section is present with: date, mode, research freshness, IB NAV,
-   liquid NAV, total wealth, position count, regime classification, data
-   quality status, spot prices used for off-platform valuations
-2. Portfolio Snapshot contains only the hierarchical asset class allocation
-   table (parent rows with sub-class rows per output-template.md) with both
-   % Liquid NAV and % Total NAV columns. Cash & Cash Equivalents row equals
-   uninvested cash + money market funds. No separate off-platform holdings
-   table (all integrated into allocation). Sector, currency, geography,
-   top 10 positions, and concentration flags are in the Appendix, NOT here.
-3. Global Market Context section in the main body contains ONLY the
-   Executive Summary (plain-language 2-3 paragraph overview). The Detailed
-   Findings (seven research sections) are in the Appendix. No Detailed
-   Findings in the main body.
-4. Key Takeaways section present with 3-5 specific insights (not generic
-   statements). Each references a concrete portfolio position, weight,
-   or exposure.
-5. Recommendations section structure (in order):
-   a. **Summary** table (merged action + deployment) is the FIRST
-      subsection. Each recommendation occupies one row if immediate, or
-      multiple rows (one per tranche) if staged. Columns: #, Action,
-      Ticker/Asset, Account, From, To, Amount, Size (% Liq NAV), Execute,
-      Entry Condition, Source, Priority. The Execute column uses absolute
-      ISO calendar weeks ("CW11", "CW12"), never relative labels.
-      Table is sorted by Execute week (earliest first), then by priority
-      within the same week. Tranche rows for the same recommendation are
-      NOT grouped together — each tranche row sits at its Execute week
-      position. **Validation: read the Execute column top to bottom and
-      confirm it is monotonically non-decreasing (CW11, CW11, CW12, CW12,
-      CW13, CW14... never CW13 before CW12). If not, re-sort before
-      reporting completion.** Followed by: cash flow totals, abort
-      conditions for staged recs, immediate-execution grouping.
-      No separate "Action Plan", "Action Summary Table", or "Deployment
-      Schedule" sections exist anywhere in the document.
-   b. Inter-Account Cash Rebalance (per-account cash table, transfers
-      if shortfall, FX notes)
+5. Recommendations:
+   a. Summary table (merged action + deployment, FIRST subsection)
+   b. Inter-Account Cash Rebalance
    c. Recommendation Details (individual structured blocks)
    d. Regime Opportunity Coverage (actioned and not-actioned tables)
    e. Regime Loser Exposure Check (held-actioned, held-no-action, no-exposure)
    f. New Opportunity Overlap Assessment (if opportunity scoring available)
-6. Every recommendation has: source tag, action, ticker, account,
-   position size, strategic intent, proceeds deployment (for
-   TRIM/EXIT/REBALANCE), tax note, tradeoff, priority
-7. Implementation optimization: no recommendation uses a naked FX
-   position when a yield-bearing money market ETF in the target currency
-   is available; no recommendation ignores existing cash/money market
-   holdings in the same currency. If any optimization was missed, revise
-   the recommendation before reporting completion.
-7b. Cash sweep check: calculate post-trade uninvested cash (after all
-    recommendations applied). If it exceeds the target from Cash Policy
-    in investor-context.md (plus the operational buffer exception),
-    verify that money market sweep recommendations exist to deploy the
-    excess. If missing, add them before reporting completion.
-8. Stress Testing & Hedging section structure (in order):
-   a. **Hedge Summary** table is the FIRST subsection. Consolidated
-      table of ALL hedge instruments across all scenarios. Columns: #,
-      Scenario, Instrument, Type, Strike/Level, Expiry, Delta,
-      Contracts/Shares, Notional, Size (% Liq NAV), Cost, Ann. Cost (%),
-      Activation, Drawdown Offset (%), Data Source. Followed by: total
-      carry cost, overlap-adjusted cost, minimum viable hedge.
+
+**Part 1 validation** (fix before proceeding to Part 2):
+- Header has: date, mode, research freshness, IB NAV, liquid NAV,
+  total wealth, position count, regime, data quality, spot prices
+- Portfolio Snapshot has hierarchical asset class table with both
+  % Liquid NAV and % Total NAV columns. Cash & Cash Equivalents
+  equals uninvested cash + money market funds. No sector/currency/
+  geography tables (those go in Part 3 Appendix).
+- Global Market Context contains ONLY the Executive Summary
+- Key Takeaways: 3-5 specific insights referencing concrete positions
+- Summary table sorted by Execute week (monotonically non-decreasing
+  CW values), then priority. Tranche rows at their Execute week, not
+  grouped. No separate "Action Plan", "Action Summary Table", or
+  "Deployment Schedule" sections.
+- Every recommendation has: source tag, action, ticker, account,
+  position size, strategic intent, proceeds deployment (for
+  TRIM/EXIT/REBALANCE), tax note, tradeoff, priority
+- Implementation optimization: no naked FX when money market available
+- Cash sweep: post-trade uninvested cash within Cash Policy target
+- Inter-Account Cash Rebalance present with per-account table
+- Regime Opportunity Coverage: every opportunity listed as actioned
+  or not-actioned. No opportunity silently dropped.
+- Regime Loser Exposure Check: every loser cross-referenced
+- Abbreviation footnotes on first use
+
+### Part 2: Stress Testing and Hedging
+
+Write to `{output_path}.part2.md`. Contains (in order):
+1. Stress Testing & Hedging:
+   a. Hedge Summary table (FIRST subsection, all hedges consolidated)
    b. Volatility Regime Context
-   c. Scenarios (min 2): each with impact table AND hedge strategy
-      referencing hedge numbers (H1, H2...) from the Hedge Summary
+   c. Per-scenario detail (min 2 scenarios, each with impact table
+      AND hedge strategy referencing H# numbers from Hedge Summary)
    d. Hedge Cost-Efficiency ranking table
-9. No "Hedge Playbook" section exists. Hedges reference the recommended
-   portfolio (current + all recommendations applied).
-10. If comparison mode: Comparison Analysis and Decision Triggers present
-    in main body.
-11. Appendix contains (in order):
-    - Global Market Context: Detailed Findings
-    - Opportunity Landscape (Top 5 opportunities AND Top 5 losers)
-    - Impact & Risk Assessment (thesis/market impact, position matrix,
-      risk dimensions)
-    - Steelman Check (counter-case for top 3 recommendations)
-    - Watchlist (specific items with trigger conditions)
-    - Monitoring Framework (monthly macro, weekly position, regime shift)
-    - Previous Analysis Delta (if prior analysis exists)
-    - Escalation Flags (even if "No escalation flags triggered")
-    - Allocation by Sector
-    - Allocation by Currency
-    - Allocation by Geography
-    - Top 10 Positions
-    - Concentration Flags
-    - Full Position List (off-platform included, sorted by market value)
-12. Regime Opportunity Coverage present: every opportunity from the
-    Opportunity Landscape is listed as either "Actioned" (with rec #)
-    or "Not Actioned" (with specific reason). No opportunity silently
-    dropped.
-12b. Thesis Coverage Matrix present in the Opportunity Landscape appendix
-    section (copied from opportunity-scorer output). Every standing thesis
-    from investor-context.md has a row. If opportunity scoring was
-    unavailable, note the omission instead.
-13. Regime Loser Exposure Check present: every loser from Top 5 Losers
-    is cross-referenced against portfolio. Held losers are either
-    actioned (with rec #) or justified. Non-held losers confirmed as
-    "No exposure."
-14. Inter-Account Cash Rebalance present in Recommendations section:
-    per-account cash balance table (available vs required), transfer
-    instructions if any shortfall, FX conversion notes if multi-currency.
-    If no transfers needed, explicitly states so.
-15. Abbreviation and label footnotes: every table or paragraph that
-    introduces a bracket label (e.g. `[GEO]`, `[RV]`, `[INTEL]`,
-    `[USD_DET]`, `[IMPACT-DRIVEN]`, `[OPPORTUNITY-SCORER]`, `[LIVE]`,
-    `[ESTIMATED]`, `[FACT]`, `[INFERENCE]`) or financial abbreviation
-    (e.g. DM, EM, HY, IG, NAV, CAPE, DXY, OTM, IV, ETC, ISM, PMI,
-    CPI, SLOOS, FMS, YTD, EMBI, C&I, IRA) for the first time must
-    have a footnote block immediately below it defining all new terms.
-    Format: `> **Footnotes:** DM = Developed Markets; [GEO] = ...`.
-    Each term defined only once (on first appearance). See
-    output-template.md "Abbreviation and Label Footnotes" section for
-    full rules.
+2. Comparison Analysis + Decision Triggers (Mode 4 only)
 
-If any check fails: fix the output before reporting completion.
+**Part 2 validation** (fix before proceeding to Part 3):
+- Hedge Summary table is the FIRST subsection with all hedge
+  instruments consolidated across scenarios. Followed by: total
+  carry cost, overlap-adjusted cost, minimum viable hedge.
+- Volatility Regime Context present
+- Minimum 2 stress scenarios with impact tables and hedge strategies
+- Hedge Cost-Efficiency ranking table present
+- No separate "Hedge Playbook" section
+- Hedges reference recommended portfolio (current + all recs applied)
+- Abbreviation footnotes on first use
 
-Report back to orchestrator: confirmation message, output file path,
-number of recommendations (with source breakdown), number of escalation
-flags, and a brief validation summary.
+### Part 3: Appendix
+
+Write to `{output_path}.part3.md`. Contains all Appendix sections
+(in order):
+1. Global Market Context: Detailed Findings (seven research sections)
+2. Opportunity Landscape (opportunities, losers, geo expressions,
+   pair trades, thesis coverage matrix)
+3. Impact & Risk Assessment (thesis/market impact, position matrix,
+   risk dimensions)
+4. Steelman Check (counter-case for top 3 recommendations)
+5. Watchlist (specific items with trigger conditions)
+6. Monitoring Framework (monthly macro, weekly position, regime shift)
+7. Previous Analysis Delta (if prior analysis exists)
+8. Escalation Flags (even if "No escalation flags triggered")
+9. Allocation by Sector
+10. Allocation by Currency
+11. Allocation by Geography
+12. Top 10 Positions
+13. Concentration Flags
+14. Full Position List (off-platform included, sorted by market value)
+
+**Part 3 validation** (fix before reporting completion):
+- All appendix sections present in the order listed above
+- Thesis Coverage Matrix present in Opportunity Landscape (or noted
+  as unavailable if opportunity scoring was not run)
+- Escalation Flags section present
+- Full Position List includes off-platform positions
+- Abbreviation footnotes on first use
+
+### Completion Report
+
+Report back to orchestrator with:
+- Confirmation of completion
+- The three part file paths (part1, part2, part3)
+- Number of recommendations (with source breakdown)
+- Number of escalation flags
+- Brief validation summary per part
 
 ## Voice
 No em-dashes. No American business slang. No sophisticated transitional phrases.

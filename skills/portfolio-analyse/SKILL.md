@@ -106,16 +106,20 @@ This cache is critical for concurrent execution: multiple analysis runs (e.g., 4
 
 **If no valid cached snapshot exists:**
 
-Call `ib_status(account="all")` to check connectivity.
+Call `ib_status(account="all")` to check connectivity. Examine the per-account statuses in the response.
 
-- If `gateway_not_running` for any account: call `ib_start_gateway(account="all")`. Tell the user gateways are starting and they need to complete browser authentication. Wait for user confirmation that authentication is done, then re-check status.
-- If `auth_required` for any account: call `ib_reauthenticate(account="all")`. Tell the user which accounts need login. Wait for user confirmation, then re-check status.
-- If all accounts authenticated: proceed.
+- If ALL accounts are authenticated: proceed to fetch portfolio data.
+- If SOME accounts are authenticated and others are not (partial availability): **ask the user** before proceeding. Present:
+  - Which accounts are connected and ready (list names and labels)
+  - Which accounts are unavailable and why (gateway not running, authentication required, etc.)
+  - Two options: (1) continue with currently available accounts only, or (2) fix the unavailable accounts first (offer to call `ib_start_gateway` or `ib_reauthenticate` as appropriate, wait for user to complete login, then re-check status)
+- If NO accounts are authenticated: attempt to start/reauthenticate. Call `ib_start_gateway(account="all")` or `ib_reauthenticate(account="all")` as appropriate. Tell the user which accounts need login. Wait for user confirmation, then re-check status. If still no accounts available: stop and report.
 
-Call `ib_portfolio_summary(account="all")`. Do NOT use `force_refresh=true` unless the user explicitly requests fresh data. The MCP server returns cached data if within its own TTL, which is fast and avoids redundant IB API calls.
+Call `ib_portfolio_summary(account="all")`. Do NOT use `force_refresh=true` unless the user explicitly requests fresh data. The MCP server returns cached data if within its own TTL, which is fast and avoids redundant IB API calls. The server fetches data from all connected accounts and skips unavailable ones.
 
 - If error response: report the error and stop.
 - If success: save the full response as `OUTPUT_DIR/0-portfolio-snapshots/portfolio-summary-{YYYY-MM-DD-HH-MM-SS}.json` with `chmod 600`. This timestamped file is the canonical portfolio handoff to all subagents for this run.
+- If the response contains `accounts_unavailable`: note the skipped accounts in the portfolio snapshot metadata. Mention partial data coverage in the final output so the user is aware which accounts were excluded from the analysis.
 
 **Filter closed positions:** Before saving, remove any positions where `position == 0` or `market_value == 0`. The IB API returns closed positions for P&L tracking purposes (they have `realized_pnl` but zero shares). Also remove dividend rights and other entries with zero market value. These ghost positions cause downstream subagents to generate invalid recommendations (e.g., recommending EXIT on an already-liquidated holding). Log the count of filtered positions.
 
@@ -546,8 +550,17 @@ Prompt the subagent with:
 - Instruction to follow the methodology in its agent definition and format per output-template.md
 
 After completion:
-- Verify the output file exists and is non-empty
-- If subagent failed or output missing: abort. Report error. Note that research cache, opportunity scoring, and impact analysis are preserved for retry.
+- The subagent writes three part files instead of the final output:
+  `{output_path}.part1.md` (main body), `{output_path}.part2.md`
+  (stress testing & hedging), `{output_path}.part3.md` (appendix).
+- Verify all three part files exist and are non-empty. If any part
+  is missing or empty: abort. Report error. Note that research cache,
+  opportunity scoring, and impact analysis are preserved for retry.
+- Concatenate the three parts into the final output file using Bash:
+  `cat "{output_path}.part1.md" "{output_path}.part2.md" "{output_path}.part3.md" > "{output_path}"`
+- Verify the concatenated file is non-empty.
+- Remove the part files:
+  `rm "{output_path}.part1.md" "{output_path}.part2.md" "{output_path}.part3.md"`
 
 ### Step 8.5: Escalation Check
 
@@ -603,13 +616,17 @@ The chat summary is not a replacement for the full report. It exists so the user
 
 ### Step 10: Cleanup intermediate files
 
-Delete old intermediate files from `OUTPUT_DIR` subdirectories:
-- `0-thesis-inputs/thesis-input-*.md` files older than `INTERMEDIATE_FILE_MAX_AGE_DAYS` (7 days)
-- `3-impact-analysis/impact-analysis-*.md` files older than `INTERMEDIATE_FILE_MAX_AGE_DAYS` (7 days)
-- `3-hedge-data/hedge-data-*.json` files older than `INTERMEDIATE_FILE_MAX_AGE_DAYS` (7 days)
-- `2-opportunity-scoring/opportunity-scoring-*.md` files older than `INTERMEDIATE_FILE_MAX_AGE_DAYS` (7 days)
-- `0-portfolio-snapshots/portfolio-summary-*.json` files older than `INTERMEDIATE_FILE_MAX_AGE_DAYS` (7 days)
-- Research cache files are cleaned in Step 4 (24-hour policy)
+Delete old intermediate files from `OUTPUT_DIR` subdirectories using the
+cleanup script:
+
+```
+python3.12 OUTPUT_DIR/tmp-scripts/cleanup_old_files.py OUTPUT_DIR INTERMEDIATE_FILE_MAX_AGE_DAYS
+```
+
+This deletes portfolio snapshots, thesis inputs, market research caches,
+opportunity scoring, impact analysis, and hedge data files older than
+`INTERMEDIATE_FILE_MAX_AGE_DAYS` (default 7 days). Research cache files
+are also cleaned in Step 4 (24-hour policy).
 
 Keep the most recent set of each for debugging.
 
@@ -620,7 +637,8 @@ Keep the most recent set of each for debugging.
 | MCP server not available | Tell user to check ib-connect MCP configuration |
 | Gateway not running | Call ib_start_gateway, prompt user for auth |
 | Auth expired | Call ib_reauthenticate, prompt user to complete login |
-| Zero NAV across all accounts | Stop. Report data issue. |
+| Partial account availability | Ask user: continue with connected accounts, or fix unavailable ones first |
+| Zero NAV across all connected accounts | Stop. Report data issue. |
 | Spot price fetch fails | Use previous snapshot price or investor-context FMV. Log staleness. |
 | yt-transcript skill missing | Tell user to install yt-transcript skill |
 | YouTube transcript extraction fails | Report error, offer Market Scan mode instead |
