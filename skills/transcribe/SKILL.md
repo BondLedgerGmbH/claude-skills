@@ -212,8 +212,8 @@ Create these directories automatically if they don't exist.
     <Numbered list of the most important conclusions, insights, or implications>
 
     ## Decisions Made
-    <Bulleted list of explicit decisions or agreements reached during the meeting, with timestamps. If no clear decisions were made, state "No explicit decisions were recorded.">
-    - <decision> (~MM:SS)
+    <Numbered list of explicit decisions or agreements reached during the meeting, with timestamps. If no clear decisions were made, state "No explicit decisions were recorded.">
+    1. <decision> (~MM:SS)
 
     ## Key Discussion Points
     <Bulleted list of major topics discussed, organized thematically. Include approximate timestamps.>
@@ -224,7 +224,7 @@ Create these directories automatically if they don't exist.
     1. <action item> — *Owner: <name if known>* — *Due: <deadline if mentioned>* (~MM:SS)
 
     ## Open Questions
-    <Bulleted list of unresolved questions or topics that need further discussion>
+    <Numbered list of unresolved questions or topics that need further discussion>
 
     ## Additional Notes
     <Any other relevant context, risks mentioned, dependencies, or constraints>
