@@ -208,16 +208,16 @@ Create these directories automatically if they don't exist.
     ## Participants
     <List of participants identified from the conversation>
 
-    ## Key Discussion Points
-    <Bulleted list of major topics discussed, organized thematically. Include approximate timestamps.>
-    - **<Topic>** (~MM:SS) — <brief description>
+    ## Key Takeaways
+    <Numbered list of the most important conclusions, insights, or implications>
 
     ## Decisions Made
     <Bulleted list of explicit decisions or agreements reached during the meeting, with timestamps. If no clear decisions were made, state "No explicit decisions were recorded.">
     - <decision> (~MM:SS)
 
-    ## Key Takeaways
-    <Numbered list of the most important conclusions, insights, or implications>
+    ## Key Discussion Points
+    <Bulleted list of major topics discussed, organized thematically. Include approximate timestamps.>
+    - **<Topic>** (~MM:SS) — <brief description>
 
     ## Follow-up Items / Action Items
     <Bulleted checklist of action items with owners, deadlines, and timestamps where identifiable>
