@@ -216,7 +216,7 @@ Create these directories automatically if they don't exist.
     1. <decision> (~MM:SS)
 
     ## Key Discussion Points
-    <Bulleted list of major topics discussed, organized thematically. Include approximate timestamps.>
+    <Bulleted list of major topics discussed, organized thematically. Include approximate timestamps. Use bullets consistently throughout — no numbered sub-lists.>
     - **<Topic>** (~MM:SS) — <brief description>
 
     ## Follow-up Items / Action Items
