@@ -220,14 +220,35 @@ Create these directories automatically if they don't exist.
     - **<Topic>** (~MM:SS) — <brief description>
 
     ## Follow-up Items / Action Items
-    <Bulleted checklist of action items with owners, deadlines, and timestamps where identifiable>
-    - [ ] <action item> — *Owner: <name if known>* — *Due: <deadline if mentioned>* (~MM:SS)
+    <Numbered list of action items with owners and deadlines where identifiable>
+    1. <action item> — *Owner: <name if known>* — *Due: <deadline if mentioned>* (~MM:SS)
 
     ## Open Questions
     <Bulleted list of unresolved questions or topics that need further discussion>
 
     ## Additional Notes
     <Any other relevant context, risks mentioned, dependencies, or constraints>
+
+    ---
+
+    ## Quick Summary (copy/paste for Slack or Teams)
+
+    <Short, plain-text block designed to be pasted directly into a chat message. No Markdown formatting that won't render in Slack/Teams (no tables, no links, no frontmatter). Use bold sparingly (**bold** works in both Slack and Teams). Structure:>
+
+    **<Meeting name> — <meeting date>**
+
+    **Key Takeaways**
+    • <takeaway 1>
+    • <takeaway 2>
+
+    **Decisions**
+    • <decision 1>
+    • <decision 2>
+    <If no decisions, omit this block entirely>
+
+    **Action Items**
+    1. <action> — <owner> <deadline if known>
+    2. <action> — <owner>
     ```
 
 14. **Audio summary generation (optional)** — Generate a spoken audio version of the meeting summary using Piper text-to-speech.
