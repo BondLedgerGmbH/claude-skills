@@ -238,12 +238,12 @@ Create these directories automatically if they don't exist.
     **<Meeting name> — <meeting date>**
 
     **Key Takeaways**
-    • <takeaway 1>
-    • <takeaway 2>
+    - <takeaway 1>
+    - <takeaway 2>
 
     **Decisions**
-    • <decision 1>
-    • <decision 2>
+    - <decision 1>
+    - <decision 2>
     <If no decisions, omit this block entirely>
 
     **Action Items**
