@@ -332,6 +332,10 @@ Examples:
   ```
 - If Piper audio generation fails: warn the user but do NOT fail the overall transcription — the text outputs are the primary deliverable
 
+## Writing style
+
+- **Never use em dashes** (`--` or `—`) in any generated text (summaries, transcripts, reports). Use commas, periods, semicolons, or parentheses instead.
+
 ## Notes
 
 - The medium model provides good accuracy for meetings, conversations, and general speech.
