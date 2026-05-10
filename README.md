@@ -13,6 +13,7 @@ When you ask Claude Code to perform a task that matches a skill's trigger, it lo
 | Skill | Description |
 |-------|-------------|
 | [skill-security-scanner](skills/skill-security-scanner/) | Scans AI skill packages for security risks, vulnerabilities, backdoors, and prompt injection. Acts as a Senior Security Engineer. |
+| [transcribe](skills/transcribe/) | Transcribes local audio/video files or YouTube/podcast URLs via whisper.cpp (medium model, Apple Silicon). Two output modes: `meeting` produces a meeting summary; `source-material` produces an article-style write-up of public videos / podcasts / lectures. Hallucination detection, dictionary-based corrections, optional Piper TTS audio summary. Output templates are externalised to `templates/` for easy editing. |
 | [yt-transcript](skills/yt-transcript/) | Extracts YouTube video transcripts and produces structured summaries with key takeaways. Handles non-English videos via auto-translation. Outputs markdown + PDF. |
 | [portfolio-analyse](skills/portfolio-analyse/) | Analyses a portfolio (IB accounts + off-platform holdings) against a thesis, YouTube video, market scan, or comparison of two views. Runs a 4-subagent pipeline (market research, opportunity scoring, impact analysis, recommendations). |
 
