@@ -1,6 +1,6 @@
 ---
 name: transcribe
-description: Transcribe audio or video files (or YouTube/podcast URLs) using whisper.cpp with the medium model on Apple Silicon. Routes output between meeting mode (private recordings) and source-material mode (public videos / podcasts / lectures), each with its own downstream artifact (meeting summary vs article-style write-up). Optionally generates a spoken audio summary via Piper TTS.
+description: Transcribe audio or video files (or YouTube/podcast URLs) using whisper.cpp with the medium model on Apple Silicon. Routes output between meeting mode (private recordings) and source-material mode (public videos / podcasts / lectures), each with its own downstream artifact (meeting summary vs article-style write-up). Source-material mode organises transcripts by topic. Optionally generates a spoken audio summary via Piper TTS.
 argument-hint: [file-path(s) | URL(s)] [--meeting | --source-material] [--topic <topic>] [--audio]
 disable-model-invocation: true
 allowed-tools: Bash, Read, Write, Glob, Edit, Agent, AskUserQuestion
@@ -8,7 +8,7 @@ allowed-tools: Bash, Read, Write, Glob, Edit, Agent, AskUserQuestion
 
 # Transcribe Media Files
 
-Transcribe audio/video inputs (local files or URLs) with whisper.cpp, then produce a downstream artifact tailored to the source: a meeting summary for private recordings, or an article-style write-up for public videos / podcasts. Optionally narrate the meeting summary as a WAV via Piper.
+Transcribe audio/video inputs (local files or URLs) with whisper.cpp, then produce a downstream artifact tailored to the source: a meeting summary for private recordings, or an article-style write-up for public videos / podcasts. Source-material outputs are organised by topic. Optionally narrate the meeting summary as a WAV via Piper.
 
 ## Configuration
 
@@ -16,9 +16,50 @@ Transcribe audio/video inputs (local files or URLs) with whisper.cpp, then produ
 - **Model**: `~/.claude/models/ggml-medium.bin`.
 - **URL downloader**: `yt-dlp`. If your installer ships with a python ≥3.10 shebang it will run directly; if you see "unsupported version of Python", invoke explicitly via your homebrew python: `/opt/homebrew/bin/python3 $(which yt-dlp) ...`.
 - **Language**: default `-l en`. Use `-l <code>` if specified; only `-l auto` if explicitly requested.
-- **Dictionary**: if `transcribe-output/transcription_dictionary.md` exists in the project, load it for post-processing corrections (see Post-Processing).
 - **Templates**: all output documents are rendered from files in `templates/` next to this SKILL.md. Edit those files to change formatting; do not embed templates inline in SKILL.md.
 - **Piper TTS** (optional, for `--audio`): `~/.local/bin/piper` wrapping the piper-tts venv at `~/.local/share/piper-venv/`. Voice: `~/.local/share/piper-voices/en_US-amy-medium.onnx`.
+
+## First-run setup: the config file
+
+The skill reads its output paths from `.transcribe-config.yaml` in the current working directory. **On first run** (file missing), walk the user through setup and write the file. On subsequent runs, just load it.
+
+### Setup flow
+
+When `.transcribe-config.yaml` is missing:
+
+1. Use `AskUserQuestion` to ask: "Where should transcribe output live, relative to this project?" Offer:
+   - **`transcribe-output/`** (recommended) — single rooted folder for all output.
+   - **`./`** — write directly under the project root.
+   - **Other** — let the user type a custom path.
+2. From the chosen `output_root`, derive sensible defaults:
+   - `meeting_root`: `<output_root>/meetings`
+   - `source_material_root`: `<output_root>/source-material`
+   - `dictionary_path`: `<output_root>/transcription_dictionary.md`
+3. Show the derived paths to the user and ask via `AskUserQuestion` whether to accept the defaults or override individual paths. If they pick override, ask each path individually.
+4. Write the resulting config to `.transcribe-config.yaml`:
+   ```yaml
+   # transcribe skill config
+   meeting_root: transcribe-output/meetings
+   source_material_root: transcribe-output/source-material
+   dictionary_path: transcribe-output/transcription_dictionary.md
+   ```
+5. Do NOT add `.transcribe-config.yaml` to `.gitignore` automatically — the user may want to commit it for team consistency. Mention this in the report.
+
+### Loading
+
+On every run, read `.transcribe-config.yaml` first. If any required key is missing, treat it as a corrupt config and re-run setup, preserving any keys the user already set.
+
+### Derived paths used everywhere downstream
+
+Once config is loaded:
+
+- **Meeting transcripts dir**: `<meeting_root>/transcripts/<MMDDYYYY>/`
+- **Meeting summaries dir**: `<meeting_root>/notes/<MMDDYYYY>/`
+- **Source-material transcripts dir**: `<source_material_root>/transcripts/<topic>/`
+- **Source-material articles dir**: `<source_material_root>/articles/`
+- **Dictionary file**: `<dictionary_path>`
+
+`<MMDDYYYY>` is today's date; `<topic>` is resolved per step 0 below.
 
 ## Modes
 
@@ -27,7 +68,8 @@ The skill has two output modes. They differ in destination, filename convention,
 | | `meeting` mode | `source-material` mode |
 |---|---|---|
 | Use case | private recordings (Teams/Zoom/Meet calls, voice memos) | public videos, podcasts, lectures, conference talks |
-| Output base | `transcribe-output/<MMDDYYYY>/meetings/` | `transcribe-output/<MMDDYYYY>/source-material/` |
+| Transcripts dir | `<meeting_root>/transcripts/<MMDDYYYY>/` | `<source_material_root>/transcripts/<topic>/` |
+| Downstream dir | `<meeting_root>/notes/<MMDDYYYY>/` | `<source_material_root>/articles/` |
 | Filename pattern | `<sanitized_input>_transcript.md`, `..._transcript_timestamped.md`, `..._summary.md` | `<YYYY-MM-DD>_<source_type>_<slug>_transcript.md`, `..._timestamped.md`, `<YYYY-MM-DD>_<source_type>_<slug>.md` (article: no `_article` suffix) |
 | Frontmatter template | `templates/frontmatter-meeting.md` | `templates/frontmatter-source-material.md` |
 | Downstream template | `templates/meeting-summary.md` | `templates/article.md` |
@@ -41,24 +83,25 @@ Orthogonal to mode: each input is either a **local file** or a **URL**. URLs req
 
 ## Process
 
-### Step 0. Parse arguments and resolve mode + topic
+### Step 0. Parse arguments and resolve config, mode, topic
 
-1. Split `$ARGUMENTS` into a list of inputs (file paths and/or URLs) plus optional flags. Recognised flags:
+1. Load `.transcribe-config.yaml`. If missing, run the first-run setup flow above.
+2. Split `$ARGUMENTS` into a list of inputs (file paths and/or URLs) plus optional flags. Recognised flags:
    - `--meeting` — force meeting mode for all inputs.
    - `--source-material` — force source-material mode for all inputs.
-   - `--topic <topic>` — set a topic value to write into the source-material frontmatter (only meaningful in source-material mode).
+   - `--topic <topic>` — pin the topic (only meaningful in source-material mode).
    - `--audio` — generate a spoken summary (meeting mode only). Ignored in source-material mode.
-2. If no inputs are provided, ask the user.
-3. **Resolve mode for each input**:
+3. If no inputs are provided, ask the user.
+4. **Resolve mode for each input**:
    - If `--meeting` or `--source-material` is set, use it for all inputs.
    - Else infer:
      - URL → tentatively `source-material`.
      - Local file with `Meeting Recording` / `Teams` / `Zoom` / `GoogleMeet` markers in the filename → tentatively `meeting`.
      - Anything else → ambiguous.
    - If any input is ambiguous, **ask the user** via `AskUserQuestion`. Do not guess. Cache the answer for the rest of the batch (ask once per batch unless inputs are genuinely heterogeneous).
-4. **Resolve topic** (source-material mode only):
-   - If `--topic` is set, use it.
-   - Otherwise ask the user once via `AskUserQuestion`. Suggest options derived from past topic values used in `transcribe-output/` (look across existing date folders for prior `topic:` frontmatter values), plus an "Other" entry.
+5. **Resolve topic** (source-material mode only):
+   - If `--topic` is set, use it. Validate that `<source_material_root>/transcripts/<topic>/` exists or that the user wants to create it.
+   - Else list the existing subfolders of `<source_material_root>/transcripts/` and ask via `AskUserQuestion` which one to use, plus an option to create a new topic. If the user types a new value, create the folder.
    - Never default silently. Ambiguity on topic always becomes a question.
 
 ### Step 1. Pre-flight checks
@@ -91,7 +134,7 @@ Convert to human-readable form ("32 min 14 sec"). Warn if duration > 2 hours.
 ```bash
 ffmpeg -i "<input>" -af silencedetect=noise=-30dB:d=30 -f null - 2>&1 | grep "silence_start\|silence_end"
 ```
-Store these timestamps for use in step 9e (cross-reference with transcript to flag likely hallucinations).
+Store these timestamps for use in step 9e.
 
 ### Step 5. Resolve dates
 
@@ -100,15 +143,17 @@ Store these timestamps for use in step 9e (cross-reference with transcript to fl
 
 ### Step 6. Create output directories
 
-All outputs live under the **current working directory** (the active project folder). Use today's date in `MMDDYYYY` for the bucket folder.
+Use the config-resolved roots.
 
 - **Meeting mode**:
   ```bash
-  mkdir -p "transcribe-output/$(date +%m%d%Y)/meetings"
+  mkdir -p "<meeting_root>/transcripts/$(date +%m%d%Y)"
+  mkdir -p "<meeting_root>/notes/$(date +%m%d%Y)"
   ```
 - **Source-material mode**:
   ```bash
-  mkdir -p "transcribe-output/$(date +%m%d%Y)/source-material"
+  mkdir -p "<source_material_root>/transcripts/<topic>"
+  mkdir -p "<source_material_root>/articles"
   ```
 
 ### Step 7. Convert to 16 kHz mono WAV
@@ -149,7 +194,7 @@ Read the raw `.txt` and run all checks below, then assign a quality rating.
 
 ### Step 10. Dictionary post-processing
 
-If `transcribe-output/transcription_dictionary.md` exists, read it and apply case-insensitive whole-word replacements to both the plain and SRT transcripts. Be careful with partial words (don't turn "soaring" into "SORing"). If the file does not exist, on first run create it with an empty template:
+If `<dictionary_path>` exists, read it and apply case-insensitive whole-word replacements to both the plain and SRT transcripts. Be careful with partial words (don't turn "soaring" into "SORing"). If the file does not exist, on first run create it with an empty template:
 
 ```markdown
 # Transcription Dictionary
@@ -170,7 +215,7 @@ Load `templates/transcript.md`. Fill placeholders:
 - `QUALITY`, `QUALITY_NOTE`: from step 9f.
 - `BODY`: cleaned transcript text (paragraphs preserved; hallucinations removed; dictionary corrections applied).
 
-Write to the path resolved by mode (see Modes table above).
+Write to the path resolved by mode.
 
 ### Step 12. Render the timestamped transcript
 
@@ -178,8 +223,8 @@ Load `templates/transcript-timestamped.md`. Same frontmatter rendering as step 1
 
 ### Step 13. Render the downstream artifact
 
-- **Meeting mode**: load `templates/meeting-summary.md`. Fill all placeholders. Write to `transcribe-output/<MMDDYYYY>/meetings/<sanitized_input>_summary.md`. Include `(~MM:SS)` timestamps from the SRT for decisions, discussion points, and action items so the user can locate them. Do not invent decisions or action items; if none exist, say so explicitly.
-- **Source-material mode**: load `templates/article.md`. Fill all placeholders. Write to `transcribe-output/<MMDDYYYY>/source-material/<YYYY-MM-DD>_<source_type>_<slug>.md`. The article must reflect the source content as a coherent piece of writing, not as a transcript paraphrase. Do NOT include participants, decisions, or action items. Sections should be thematic.
+- **Meeting mode**: load `templates/meeting-summary.md`. Fill all placeholders. Write to `<meeting_root>/notes/<MMDDYYYY>/<sanitized_input>_summary.md`. Include `(~MM:SS)` timestamps from the SRT for decisions, discussion points, and action items so the user can locate them. Do not invent decisions or action items; if none exist, say so explicitly.
+- **Source-material mode**: load `templates/article.md`. Fill all placeholders. Write to `<source_material_root>/articles/<YYYY-MM-DD>_<source_type>_<slug>.md`. The article must reflect the source content as a coherent piece of writing, not as a transcript paraphrase. Do NOT include participants, decisions, or action items. Sections should be thematic.
 
 ### Step 14. Audio summary (optional, meeting mode only)
 
@@ -204,7 +249,7 @@ If `--audio` is set (or the user said yes to "generate audio summary?"), and mod
 ```bash
 cat "/tmp/piper_narration_<sanitized_name>.txt" | ~/.local/bin/piper \
   --model ~/.local/share/piper-voices/en_US-amy-medium.onnx \
-  --output_file "transcribe-output/<MMDDYYYY>/meetings/<sanitized_name>_summary.wav"
+  --output_file "<meeting_root>/notes/<MMDDYYYY>/<sanitized_name>_summary.wav"
 ```
 
 **Verify** the WAV was written and is non-empty. On failure, warn but do not fail the overall run.
@@ -276,6 +321,7 @@ Examples (source-material slug):
 - Piper generation failure: warn the user, do not fail the overall transcription. Text outputs are the primary deliverable.
 - Input file unreadable: report path and stop for that input only.
 - Transcription empty: report and suggest checking audio quality or input format.
+- `.transcribe-config.yaml` corrupt or missing keys: re-run the first-run setup, preserving any keys the user already set.
 
 ## Writing style
 
@@ -289,3 +335,4 @@ Examples (source-material slug):
 - Templates live in `templates/` next to this SKILL.md. Edit those to adjust output format. SKILL.md should not embed templates inline.
 - Piper TTS runs locally via onnxruntime (no network calls or API keys). The Amy medium voice produces 22050 Hz mono WAV.
 - Audio summaries are always optional and never block the core transcription workflow.
+- The `.transcribe-config.yaml` config file is per-project. To use the same layout in another project, copy the file or commit it to your repo. To reset, delete the file and run the skill again.
